@@ -121,11 +121,27 @@ namespace Swagger4WCF
 				private MethodDefinition[] AddMethodsForType(TypeDefinition type, Documentation documentation)
 				{
 					var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && _Method.GetCustomAttribute<OperationContractAttribute>() != null).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
+					var methodsGroupedByPath = _methods.GroupBy(m =>
+					{
+						var attribute = m.GetCustomAttribute<WebInvokeAttribute>() ?? m.GetCustomAttribute<WebGetAttribute>();
+						if (attribute == null)
+							return string.Empty;
+
+							var uriTemplate = attribute?.Value<string>("UriTemplate");
+							if(uriTemplate.IndexOf('?') > 0)
+								return uriTemplate.Substring(0, uriTemplate.IndexOf('?'));
+							return uriTemplate;
+					}, key => key).ToDictionary(k => k.Key, v => v);
 					using (new Block(this))
 					{
-						foreach (var _method in _methods)
+						foreach (var _method in methodsGroupedByPath.Keys)
 						{
-							this.Add(_method, documentation);
+							if (string.IsNullOrWhiteSpace(_method))
+								continue;
+
+							this.Add("/", _method, ":");
+							foreach(var m in methodsGroupedByPath[_method])
+								this.Add(m, documentation);
 						}
 					}
 
@@ -139,8 +155,6 @@ namespace Swagger4WCF
 
 				private void Add(MethodDefinition method, Documentation documentation)
 				{
-					var _parameters = method.Parameters;
-					this.Add("/", method.Name, ":");
 					using (new Block(this))
 					{
 						var _attribute = method.GetCustomAttribute<WebInvokeAttribute>();
@@ -151,13 +165,18 @@ namespace Swagger4WCF
 							{
 								return;
 							}
-							this.Add("get:");
 						}
-						else if (string.IsNullOrEmpty(_attribute.Value<string>("Method")))
+
+						if (string.IsNullOrEmpty(_attribute.Value<string>("Method")))
 						{
 							return;
 						}
-						else { this.Add(_attribute.Value<string>("Method").ToLower(), ":"); }
+
+						//this.Add("/", _attribute.Value<string>("UriTemplate") ?? method.Name, ":");
+
+						this.Add(_attribute.Value<string>("Method").ToLower(), ":");
+						var _parameters = method.Parameters;
+
 						using (new Block(this))
 						{
 							if (documentation != null && documentation[method].Summary != null)
