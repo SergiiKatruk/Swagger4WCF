@@ -39,6 +39,7 @@ namespace Swagger4WCF
         {
             var _directory = Path.GetDirectoryName(args[4]);
             var _name = Path.GetFileNameWithoutExtension(args[1]);
+            string interfaceToGenerateName = GetStringArgument(args, 5);
             var _resolver = new DefaultAssemblyResolver();
             _resolver.AddSearchDirectory(_directory);
             var _domain = Directory.EnumerateFiles(_directory, "*.dll").Select(_File =>
@@ -61,7 +62,7 @@ namespace Swagger4WCF
             }).Where(_Entry => _Entry != null).ToArray();
             foreach (var _entry in _domain)
             {
-                foreach (var _document in YAML.Generate(_entry.Assembly, Documentation.Load(_entry.Location, _entry.Assembly)))
+                foreach (var _document in YAML.Generate(_entry.Assembly, Documentation.Load(_entry.Location, _entry.Assembly), interfaceToGenerateName))
                 {
                     var _location = $@"{ _directory }\{ _entry.Assembly.Name.Name }.{_document.Type.Name }.yaml";
                     using (var _writer = new StreamWriter(_location, false, Encoding.UTF8))
@@ -72,5 +73,8 @@ namespace Swagger4WCF
                 }
             }
         }
-    }
+
+		private static string GetStringArgument(string[] args, int index) => 
+            (index < 0 || args.Length == 0 || args.Length < index) ? null : args[0].ToString();
+	}
 }

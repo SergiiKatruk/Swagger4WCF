@@ -21,9 +21,9 @@ namespace Swagger4WCF
                 private Tabulation m_Tabulation = new Tabulation("  ", 0);
                 private List<TypeReference> definitionList = new List<TypeReference>();
 
-                static public Document Generate(TypeDefinition type, Documentation documentation)
+                static public Document Generate(TypeDefinition type, Documentation documentation, AssemblyDefinition assembly)
                 {
-                    return new Document(type, new Content(type, documentation));
+                    return new Document(type, new Content(type, documentation, assembly));
                 }
 
                 static public implicit operator string(Content compiler)
@@ -37,84 +37,100 @@ namespace Swagger4WCF
                 }
 
 
-                private Content(TypeDefinition type, Documentation documentation)
-                {
-                    this.Add("swagger: '2.0'");
-                    this.Add("info:");
-                    using (new Block(this))
+                private Content(TypeDefinition type, Documentation documentation, AssemblyDefinition assembly)
+				{
+					this.Add("swagger: '2.0'");
+					this.Add("info:");
+					using (new Block(this))
+					{
+						this.Add("title: ", type.Name);
+						if (documentation[type] != null) { this.Add("description: ", documentation[type]); }
+						var _customAttribute = type.Module.Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
+						var _argument = _customAttribute?.Argument<string>(0);
+						if (_argument != null)
+						{
+							this.Add($"version: \"{ _argument }\"");
+						}
+					}
+					this.Add("host: localhost");
+					this.Add("schemes:");
+					using (new Block(this))
+					{
+						this.Add("- http");
+						this.Add("- https");
+					}
+					this.Add("basePath: /", type.Name);
+					this.Add("paths:");
+
+                    var _allMethods = new List<MethodDefinition>();
                     {
-                        this.Add("title: ", type.Name);
-                        if (documentation[type] != null) { this.Add("description: ", documentation[type]); }
-                        var _customAttribute = type.Module.Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
-                        var _argument = _customAttribute?.Argument<string>(0);
-                        if (_argument != null)
-                        {
-                            this.Add($"version: \"{ _argument }\"");
-                        }
+                        var allTypes = new List<TypeDefinition> { type };
+                        allTypes.AddRange(type.Interfaces.Select(interf => assembly.MainModule.GetType(interf.InterfaceType.FullName)));
+                        allTypes.ForEach(currentTypes => _allMethods.AddRange(AddMethodsForType(currentTypes, documentation)));
                     }
-                    this.Add("host: localhost");
-                    this.Add("schemes:");
-                    using (new Block(this))
-                    {
-                        this.Add("- http");
-                        this.Add("- https");
-                    }
-                    this.Add("basePath: /", type.Name);
-                    this.Add("paths:");
-                    var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && _Method.GetCustomAttribute<OperationContractAttribute>() != null).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
-                    using (new Block(this))
-                    {
-                        foreach (var _method in _methods)
-                        {
-                            this.Add(_method, documentation);
-                        }
-                    }
-                    this.Add("definitions:");
-                    using (new Block(this))
-                    {
-                        var responses = _methods.Select(_Method => _Method.ReturnType).Distinct()
-                            .OrderBy(typeRef => typeRef.Name)
-                            .Where(typeRef =>
-                                !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(void)).Resolve())
-                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(bool)).Resolve())
-                                && !(typeRef.Resolve() ==
-                                     typeRef.Resolve().Module.ImportReference(typeof(string)).Resolve())
-                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(int)).Resolve())
-                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(long)).Resolve())
-                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
-                            .Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
+					this.Add("definitions:");
+					AddDefinitionsForMethods(documentation, _allMethods);
+				}
 
-                        definitionList.AddRange(responses.ToList());
+				private void AddDefinitionsForMethods(Documentation documentation, List<MethodDefinition> _methods)
+				{
+					using (new Block(this))
+					{
+						var responses = _methods.Select(_Method => _Method.ReturnType).Distinct()
+							.OrderBy(typeRef => typeRef.Name)
+							.Where(typeRef =>
+								!(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(void)).Resolve())
+								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(bool)).Resolve())
+								&& !(typeRef.Resolve() ==
+									 typeRef.Resolve().Module.ImportReference(typeof(string)).Resolve())
+								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(int)).Resolve())
+								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(long)).Resolve())
+								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
+							.Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
 
-                        var resparameters = _methods.SelectMany(_Method => _Method.Parameters).Select(x => x.ParameterType)
-                            .OrderBy(typeRef => typeRef.Name)
-                            .Where(typeRef =>
-                                !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(void)).Resolve())
-                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(bool)).Resolve())
-                                && !(typeRef.Resolve() ==
-                                     typeRef.Resolve().Module.ImportReference(typeof(string)).Resolve())
-                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(int)).Resolve())
-                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(long)).Resolve())
-                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
-                            .Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
+						var resparameters = _methods.SelectMany(_Method => _Method.Parameters).Select(x => x.ParameterType)
+							.OrderBy(typeRef => typeRef.Name)
+							.Where(typeRef =>
+								!(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(void)).Resolve())
+								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(bool)).Resolve())
+								&& !(typeRef.Resolve() ==
+									 typeRef.Resolve().Module.ImportReference(typeof(string)).Resolve())
+								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(int)).Resolve())
+								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(long)).Resolve())
+								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
+							.Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
 
-                        definitionList.AddRange(resparameters.ToList());
-                        int beforeCnt = definitionList.Count;
-                        for (int i = 0; i < beforeCnt; i++)
-                        {
-                            ParseComplexType(definitionList[i], documentation);
-                        }
+						definitionList.AddRange(resparameters.Union(responses).Distinct().ToList());
+						int beforeCnt = definitionList.Count;
+						for (int i = 0; i < beforeCnt; i++)
+						{
+							ParseComplexType(definitionList[i], documentation);
+						}
 
-                        int afterCnt = definitionList.Count;
+						int afterCnt = definitionList.Count;
 
-                        for (int i = beforeCnt; i < afterCnt; i++)
-                        {
-                            ParseComplexType(definitionList[i], documentation);
-                        }
-                    }
-                }
+						for (int i = beforeCnt; i < afterCnt; i++)
+						{
+							ParseComplexType(definitionList[i], documentation);
+						}
+					}
+				}
 
-                private void Add(params string[] line)
+				private MethodDefinition[] AddMethodsForType(TypeDefinition type, Documentation documentation)
+				{
+					var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && _Method.GetCustomAttribute<OperationContractAttribute>() != null).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
+					using (new Block(this))
+					{
+						foreach (var _method in _methods)
+						{
+							this.Add(_method, documentation);
+						}
+					}
+
+					return _methods;
+				}
+
+				private void Add(params string[] line)
                 {
                     this.m_Builder.AppendLine(this.m_Tabulation.ToString() + string.Concat(line));
                 }
@@ -170,7 +186,8 @@ namespace Swagger4WCF
                                 this.Add("tags:");
                                 using (new Block(this))
                                 {
-                                    this.Add("- ", method.DeclaringType.Name);
+                                    var attribute = method.DeclaringType.GetCustomAttribute<ServiceContractAttribute>();
+                                    this.Add("- ", attribute?.Value<string>("Name") ?? method.DeclaringType.Name);
                                 }
                             }
                             this.Add("responses:");

@@ -13,9 +13,9 @@ namespace Swagger4WCF
     {
         public partial class Document
         {
-            static public Document Generate(TypeDefinition type, Documentation documentation)
+            static public Document Generate(TypeDefinition type, Documentation documentation, AssemblyDefinition assembly)
             {
-                return Content.Generate(type, documentation ?? Documentation.Empty());
+                return Content.Generate(type, documentation ?? Documentation.Empty(), assembly);
             }
 
             static public implicit operator string(YAML.Document document)
