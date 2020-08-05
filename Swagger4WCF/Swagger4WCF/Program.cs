@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -40,9 +41,15 @@ namespace Swagger4WCF
             var _directory = Path.GetDirectoryName(args[4]);
             var _name = Path.GetFileNameWithoutExtension(args[1]);
             string interfaceToGenerateName = GetStringArgument(args, 5);
+            string dllFileName = GetStringArgument(args, 4);
             var _resolver = new DefaultAssemblyResolver();
             _resolver.AddSearchDirectory(_directory);
-            var _domain = Directory.EnumerateFiles(_directory, "*.dll").Select(_File =>
+            var dllsToParse = new List<string>();
+            if (dllFileName == null || !dllFileName.EndsWith(".dll"))
+                dllsToParse.AddRange(Directory.EnumerateFiles(_directory, "*.dll"));
+            else
+                dllsToParse.Add(dllFileName);
+            var _domain = dllsToParse.Select(_File =>
             {
                 try
                 {

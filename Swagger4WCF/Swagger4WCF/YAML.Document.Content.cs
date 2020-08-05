@@ -158,9 +158,10 @@ namespace Swagger4WCF
                         else { this.Add(_attribute.Value<string>("Method").ToLower(), ":"); }
                         using (new Block(this))
                         {
-
-                            this.Add("summary: ", method.Name);
-                            if (documentation != null && documentation[method].Summary != null) { this.Add("description: ", documentation[method].Summary); }
+                            if (documentation != null && documentation[method].Summary != null) 
+                            {
+                                this.Add("summary: ", documentation[method].Summary);
+                            }
                             this.Add("consumes:");
                             using (new Block(this))
                             {
@@ -277,7 +278,7 @@ namespace Swagger4WCF
                     }
                     else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve())
                     {
-                        this.Add("type:\" boolean\"");
+                        this.Add("type: \"boolean\"");
                     }
                     else if (type.Resolve() == type.Module.ImportReference(typeof(int)).Resolve())
                     {

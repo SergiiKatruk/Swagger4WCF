@@ -76,8 +76,8 @@ namespace Swagger4WCF
             {
                 return new Method()
                 {
-                    Summary = this[string.Concat("M:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(", ", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")")],
-                    Response = this[string.Concat("R:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(", ", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")")]
+                    Summary = this[string.Concat("M:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")")],
+                    Response = this[string.Concat("R:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")")]
                 };
             }
         }
