@@ -11,33 +11,33 @@ using System.Text;
 
 namespace Swagger4WCF
 {
-    static public partial class YAML
-    {
-        public partial class Document
-        {
-            private partial class Content
-            {
-                private StringBuilder m_Builder = new StringBuilder();
-                private Tabulation m_Tabulation = new Tabulation("  ", 0);
-                private List<TypeReference> definitionList = new List<TypeReference>();
+	static public partial class YAML
+	{
+		public partial class Document
+		{
+			private partial class Content
+			{
+				private StringBuilder m_Builder = new StringBuilder();
+				private Tabulation m_Tabulation = new Tabulation("  ", 0);
+				private List<TypeReference> definitionList = new List<TypeReference>();
 
-                static public Document Generate(TypeDefinition type, Documentation documentation, AssemblyDefinition assembly)
-                {
-                    return new Document(type, new Content(type, documentation, assembly));
-                }
+				static public Document Generate(TypeDefinition type, Documentation documentation, AssemblyDefinition assembly)
+				{
+					return new Document(type, new Content(type, documentation, assembly));
+				}
 
-                static public implicit operator string(Content compiler)
-                {
-                    return compiler == null ? null : compiler.ToString();
-                }
+				static public implicit operator string(Content compiler)
+				{
+					return compiler == null ? null : compiler.ToString();
+				}
 
-                public override string ToString()
-                {
-                    return this.m_Builder.ToString();
-                }
+				public override string ToString()
+				{
+					return this.m_Builder.ToString();
+				}
 
 
-                private Content(TypeDefinition type, Documentation documentation, AssemblyDefinition assembly)
+				private Content(TypeDefinition type, Documentation documentation, AssemblyDefinition assembly)
 				{
 					this.Add("swagger: '2.0'");
 					this.Add("info:");
@@ -62,12 +62,12 @@ namespace Swagger4WCF
 					this.Add("basePath: /", type.Name);
 					this.Add("paths:");
 
-                    var _allMethods = new List<MethodDefinition>();
-                    {
-                        var allTypes = new List<TypeDefinition> { type };
-                        allTypes.AddRange(type.Interfaces.Select(interf => assembly.MainModule.GetType(interf.InterfaceType.FullName)));
-                        allTypes.ForEach(currentTypes => _allMethods.AddRange(AddMethodsForType(currentTypes, documentation)));
-                    }
+					var _allMethods = new List<MethodDefinition>();
+					{
+						var allTypes = new List<TypeDefinition> { type };
+						allTypes.AddRange(type.Interfaces.Select(interf => assembly.MainModule.GetType(interf.InterfaceType.FullName)));
+						allTypes.ForEach(currentTypes => _allMethods.AddRange(AddMethodsForType(currentTypes, documentation)));
+					}
 					this.Add("definitions:");
 					AddDefinitionsForMethods(documentation, _allMethods);
 				}
@@ -87,6 +87,7 @@ namespace Swagger4WCF
 								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(long)).Resolve())
 								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
 							.Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
+						definitionList.AddRange(responses);
 
 						var resparameters = _methods.SelectMany(_Method => _Method.Parameters).Select(x => x.ParameterType)
 							.OrderBy(typeRef => typeRef.Name)
@@ -100,7 +101,8 @@ namespace Swagger4WCF
 								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
 							.Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
 
-						definitionList.AddRange(resparameters.Union(responses).Distinct().ToList());
+						definitionList.AddRange(resparameters);
+						definitionList = definitionList.Distinct().ToList();
 						int beforeCnt = definitionList.Count;
 						for (int i = 0; i < beforeCnt; i++)
 						{
@@ -131,245 +133,245 @@ namespace Swagger4WCF
 				}
 
 				private void Add(params string[] line)
-                {
-                    this.m_Builder.AppendLine(this.m_Tabulation.ToString() + string.Concat(line));
-                }
+				{
+					this.m_Builder.AppendLine(this.m_Tabulation.ToString() + string.Concat(line));
+				}
 
-                private void Add(MethodDefinition method, Documentation documentation)
-                {
-                    var _parameters = method.Parameters;
-                    this.Add("/", method.Name, ":");
-                    using (new Block(this))
-                    {
-                        var _attribute = method.GetCustomAttribute<WebInvokeAttribute>();
-                        if (_attribute == null)
-                        {
-                            _attribute = method.GetCustomAttribute<WebGetAttribute>();
-                            if (_attribute == null)
-                            {
-                                return;
-                            }
-                            this.Add("get:");
-                        }
-                        else if (string.IsNullOrEmpty(_attribute.Value<string>("Method")))
-                        {
-                            return;
-                        }
-                        else { this.Add(_attribute.Value<string>("Method").ToLower(), ":"); }
-                        using (new Block(this))
-                        {
-                            if (documentation != null && documentation[method].Summary != null) 
-                            {
-                                this.Add("summary: ", documentation[method].Summary);
-                            }
-                            this.Add("consumes:");
-                            using (new Block(this))
-                            {
-                                if (_attribute.Value("RequestFormat") && _attribute.Value<WebMessageFormat>("RequestFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
-                                else { this.Add("- application/xml"); }
-                            }
-                            this.Add("produces:");
-                            using (new Block(this))
-                            {
-                                if (_attribute.Value("ResponseFormat") && _attribute.Value<WebMessageFormat>("ResponseFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
-                                else { this.Add("- application/xml"); }
-                            }
-                            if (_parameters.Count > 0)
-                            {
-                                this.Add("parameters:");
-                                using (new Block(this))
-                                {
-                                    foreach (var _parameter in _parameters)
-                                    {
-                                        this.Add(method, _parameter, documentation);
-                                    }
-                                }
-                                this.Add("tags:");
-                                using (new Block(this))
-                                {
-                                    var attribute = method.DeclaringType.GetCustomAttribute<ServiceContractAttribute>();
-                                    this.Add("- ", attribute?.Value<string>("Name") ?? method.DeclaringType.Name);
-                                }
-                            }
-                            this.Add("responses:");
-                            using (new Block(this))
-                            {
-                                this.Add("200:");
-                                using (new Block(this))
-                                {
-                                    if (documentation != null && documentation[method].Response != null)
-                                    {
-                                        this.Add("description: ", documentation[method].Response);
-                                    }
-                                    else
-                                    {
-                                        this.Add("description: OK");
-                                    }
-                                    if (method.ReturnType.Resolve() != method.Module.ImportReference(typeof(void)).Resolve())
-                                    {
-                                        this.Add("schema:");
-                                        using (new Block(this))
-                                        {
-                                            this.Add(method.ReturnType, documentation);
-                                        }
-                                    }
-                                }
-                                this.Add("default:");
-                                using (new Block(this))
-                                {
-                                    this.Add("description: failed");
-                                    this.Add("schema:");
-                                    using (new Block(this)) { this.Add("type: \"string\""); }
-                                }
-                            }
-                        }
-                    }
-                }
+				private void Add(MethodDefinition method, Documentation documentation)
+				{
+					var _parameters = method.Parameters;
+					this.Add("/", method.Name, ":");
+					using (new Block(this))
+					{
+						var _attribute = method.GetCustomAttribute<WebInvokeAttribute>();
+						if (_attribute == null)
+						{
+							_attribute = method.GetCustomAttribute<WebGetAttribute>();
+							if (_attribute == null)
+							{
+								return;
+							}
+							this.Add("get:");
+						}
+						else if (string.IsNullOrEmpty(_attribute.Value<string>("Method")))
+						{
+							return;
+						}
+						else { this.Add(_attribute.Value<string>("Method").ToLower(), ":"); }
+						using (new Block(this))
+						{
+							if (documentation != null && documentation[method].Summary != null)
+							{
+								this.Add("summary: ", documentation[method].Summary);
+							}
+							this.Add("consumes:");
+							using (new Block(this))
+							{
+								if (_attribute.Value("RequestFormat") && _attribute.Value<WebMessageFormat>("RequestFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
+								else { this.Add("- application/xml"); }
+							}
+							this.Add("produces:");
+							using (new Block(this))
+							{
+								if (_attribute.Value("ResponseFormat") && _attribute.Value<WebMessageFormat>("ResponseFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
+								else { this.Add("- application/xml"); }
+							}
+							if (_parameters.Count > 0)
+							{
+								this.Add("parameters:");
+								using (new Block(this))
+								{
+									foreach (var _parameter in _parameters)
+									{
+										this.Add(method, _parameter, documentation);
+									}
+								}
+								this.Add("tags:");
+								using (new Block(this))
+								{
+									var attribute = method.DeclaringType.GetCustomAttribute<ServiceContractAttribute>();
+									this.Add("- ", attribute?.Value<string>("Name") ?? method.DeclaringType.Name);
+								}
+							}
+							this.Add("responses:");
+							using (new Block(this))
+							{
+								this.Add("200:");
+								using (new Block(this))
+								{
+									if (documentation != null && documentation[method].Response != null)
+									{
+										this.Add("description: ", documentation[method].Response);
+									}
+									else
+									{
+										this.Add("description: OK");
+									}
+									if (method.ReturnType.Resolve() != method.Module.ImportReference(typeof(void)).Resolve())
+									{
+										this.Add("schema:");
+										using (new Block(this))
+										{
+											this.Add(method.ReturnType, documentation);
+										}
+									}
+								}
+								this.Add("default:");
+								using (new Block(this))
+								{
+									this.Add("description: failed");
+									this.Add("schema:");
+									using (new Block(this)) { this.Add("type: \"string\""); }
+								}
+							}
+						}
+					}
+				}
 
-                private void Add(MethodDefinition method, ParameterDefinition parameter, Documentation documentation)
-                {
-                    var _type = parameter.ParameterType;
-                    this.Add("- name: ", parameter.Name);
-                    using (new Block(this))
-                    {
-                        if (_type.Resolve() == _type.Module.ImportReference(typeof(string)).Resolve()
-                            || _type.Resolve() == _type.Module.ImportReference(typeof(int)).Resolve()
-                            || _type.Resolve() == _type.Module.ImportReference(typeof(long)).Resolve()
-                            || _type.Resolve() == _type.Module.ImportReference(typeof(DateTime)).Resolve()
-                            || _type.IsArray)
-                        {
-                            this.Add("in: query");
-                            if (documentation != null && documentation[method, parameter] != null) { this.Add("description: ", documentation[method, parameter]); }
-                            this.Add("required: ", parameter.ParameterType.IsValueType.ToString().ToLower());
-                            this.Add(parameter.ParameterType, documentation);
-                        }
-                        else
-                        {
-                            this.Add("in: body");
-                            if (documentation != null && documentation[method, parameter] != null)
-                            {
-                                this.Add("description: ", documentation[method, parameter]);
-                            }
-                            this.Add("required: ", parameter.ParameterType.IsValueType.ToString().ToLower());
-                            this.Add("schema:");
-                            using (new Block(this))
-                            {
-                                this.Add(parameter.ParameterType, documentation);
-                            }
-                        }
-                    }
-                }
+				private void Add(MethodDefinition method, ParameterDefinition parameter, Documentation documentation)
+				{
+					var _type = parameter.ParameterType;
+					this.Add("- name: ", parameter.Name);
+					using (new Block(this))
+					{
+						if (_type.Resolve() == _type.Module.ImportReference(typeof(string)).Resolve()
+							|| _type.Resolve() == _type.Module.ImportReference(typeof(int)).Resolve()
+							|| _type.Resolve() == _type.Module.ImportReference(typeof(long)).Resolve()
+							|| _type.Resolve() == _type.Module.ImportReference(typeof(DateTime)).Resolve()
+							|| _type.IsArray)
+						{
+							this.Add("in: query");
+							if (documentation != null && documentation[method, parameter] != null) { this.Add("description: ", documentation[method, parameter]); }
+							this.Add("required: ", parameter.ParameterType.IsValueType.ToString().ToLower());
+							this.Add(parameter.ParameterType, documentation);
+						}
+						else
+						{
+							this.Add("in: body");
+							if (documentation != null && documentation[method, parameter] != null)
+							{
+								this.Add("description: ", documentation[method, parameter]);
+							}
+							this.Add("required: ", parameter.ParameterType.IsValueType.ToString().ToLower());
+							this.Add("schema:");
+							using (new Block(this))
+							{
+								this.Add(parameter.ParameterType, documentation);
+							}
+						}
+					}
+				}
 
-                private void Add(PropertyDefinition property, Documentation documentation)
-                {
-                    this.Add(property.Name, ":");
-                    using (new Block(this))
-                    {
-                        this.Add(property.PropertyType, documentation);
-                        if (documentation != null && documentation[property] != null) { this.Add("description: ", documentation[property]); }
-                    }
-                }
+				private void Add(PropertyDefinition property, Documentation documentation)
+				{
+					this.Add(property.Name, ":");
+					using (new Block(this))
+					{
+						this.Add(property.PropertyType, documentation);
+						if (documentation != null && documentation[property] != null) { this.Add("description: ", documentation[property]); }
+					}
+				}
 
-                private void Add(TypeReference type, Documentation documentation)
-                {
-                    if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve())
-                    {
-                        this.Add("type: \"string\"");
-                    }
-                    else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve())
-                    {
-                        this.Add("type: \"boolean\"");
-                    }
-                    else if (type.Resolve() == type.Module.ImportReference(typeof(int)).Resolve())
-                    {
-                        this.Add("type: \"number\"");
-                        this.Add("format: int32");
-                    }
-                    else if (type.Resolve() == type.Module.ImportReference(typeof(long)).Resolve())
-                    {
-                        this.Add("type: \"number\"");
-                        this.Add("format: int32");
-                    }
-                    else if (type.Resolve() == type.Module.ImportReference(typeof(decimal)).Resolve()
-                             || type.Resolve() == type.Module.ImportReference(typeof(decimal?)).Resolve())
-                    {
-                        this.Add("type: \"number\"");
-                        this.Add("format: decimal(9,2)");
-                    }
-                    else if (type.Resolve() == type.Module.ImportReference(typeof(DateTime)).Resolve())
-                    {
-                        this.Add("type: \"string\"");
-                        this.Add("format: date-time");
-                    }
-                    else if (type.IsArray)
-                    {
-                        this.Add("type: array");
-                        this.Add("items:");
-                        using (new Block(this)) { this.Add(type.GetElementType(), documentation); }
-                    }
-                    else if (type is TypeDefinition typeDef && typeDef.IsEnum)
-                    {
-                        this.Add("type: \"string\"");
-                        this.Add("enum:");
-                        
-                        foreach (var field in typeDef.Fields)
-                        {
-                            if (field.Name == "value__")
-                                continue;
-                            this.Add($"- {field.Name}");
-                        }
-                    }
-                    else
-                    {
-                        if (type.Resolve()?.GetCustomAttribute<DataContractAttribute>() == null)
-                        {
-                            definitionList.Add(type);
-                            this.Add("$ref: \"#/definitions/", type.Name, "\"");
-                        }
-                        else
-                        {
-                            this.Add("$ref: \"#/definitions/", type.Name, "\"");
-                        }
+				private void Add(TypeReference type, Documentation documentation)
+				{
+					if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve())
+					{
+						this.Add("type: \"string\"");
+					}
+					else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve())
+					{
+						this.Add("type: \"boolean\"");
+					}
+					else if (type.Resolve() == type.Module.ImportReference(typeof(int)).Resolve())
+					{
+						this.Add("type: \"number\"");
+						this.Add("format: int32");
+					}
+					else if (type.Resolve() == type.Module.ImportReference(typeof(long)).Resolve())
+					{
+						this.Add("type: \"number\"");
+						this.Add("format: int32");
+					}
+					else if (type.Resolve() == type.Module.ImportReference(typeof(decimal)).Resolve()
+							 || type.Resolve() == type.Module.ImportReference(typeof(decimal?)).Resolve())
+					{
+						this.Add("type: \"number\"");
+						this.Add("format: decimal(9,2)");
+					}
+					else if (type.Resolve() == type.Module.ImportReference(typeof(DateTime)).Resolve())
+					{
+						this.Add("type: \"string\"");
+						this.Add("format: date-time");
+					}
+					else if (type.IsArray)
+					{
+						this.Add("type: array");
+						this.Add("items:");
+						using (new Block(this)) { this.Add(type.GetElementType(), documentation); }
+					}
+					else if (type is TypeDefinition typeDef && typeDef.IsEnum)
+					{
+						this.Add("type: \"string\"");
+						this.Add("enum:");
 
-                    }
-                }
+						foreach (var field in typeDef.Fields)
+						{
+							if (field.Name == "value__")
+								continue;
+							this.Add($"- {field.Name}");
+						}
+					}
+					else
+					{
+						if (type.Resolve()?.GetCustomAttribute<DataContractAttribute>() == null)
+						{
+							definitionList.Add(type);
+							this.Add("$ref: \"#/definitions/", type.Name, "\"");
+						}
+						else
+						{
+							this.Add("$ref: \"#/definitions/", type.Name, "\"");
+						}
 
-                private void ParseComplexType(TypeReference referenceType, Documentation documentation)
-                {
-                    if (referenceType.Resolve() == referenceType.Module.ImportReference(typeof(void)).Resolve())
-                    {
-                        return;
-                    }
+					}
+				}
 
-                    if (referenceType.Resolve() == null)
-                    {
-                        return;
-                    }
-                    this.Add(referenceType.Name, ":");
-                    using (new Block(this))
-                    {
-                        this.Add("type: object");
-                        if (documentation != null && !String.IsNullOrEmpty(documentation[referenceType.Resolve()]))
-                        {
-                            this.Add(string.Concat("description: ", documentation[referenceType.Resolve()]));
-                        }
+				private void ParseComplexType(TypeReference referenceType, Documentation documentation)
+				{
+					if (referenceType.Resolve() == referenceType.Module.ImportReference(typeof(void)).Resolve())
+					{
+						return;
+					}
 
-                        if (referenceType.Resolve().Properties.Count > 0)
-                        {
-                            this.Add("properties:");
-                            using (new Block(this))
-                            {
-                                var propertyDefinitions = referenceType.Resolve().Properties;
+					if (referenceType.Resolve() == null)
+					{
+						return;
+					}
+					this.Add(referenceType.Name, ":");
+					using (new Block(this))
+					{
+						this.Add("type: object");
+						if (documentation != null && !String.IsNullOrEmpty(documentation[referenceType.Resolve()]))
+						{
+							this.Add(string.Concat("description: ", documentation[referenceType.Resolve()]));
+						}
 
-                                foreach (var propertyDefinition in propertyDefinitions)
-                                {
-                                    this.Add(propertyDefinition, documentation);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+						if (referenceType.Resolve().Properties.Count > 0)
+						{
+							this.Add("properties:");
+							using (new Block(this))
+							{
+								var propertyDefinitions = referenceType.Resolve().Properties;
+
+								foreach (var propertyDefinition in propertyDefinitions)
+								{
+									this.Add(propertyDefinition, documentation);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
