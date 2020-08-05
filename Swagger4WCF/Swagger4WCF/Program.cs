@@ -75,6 +75,6 @@ namespace Swagger4WCF
         }
 
 		private static string GetStringArgument(string[] args, int index) => 
-            (index < 0 || args.Length == 0 || args.Length < index) ? null : args[0].ToString();
+            (index < 0 || args.Length == 0 || args.Length < index) ? null : args[index].ToString();
 	}
 }
