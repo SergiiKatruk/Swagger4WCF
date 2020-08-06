@@ -1,6 +1,8 @@
 ﻿using Mono.Cecil;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime;
@@ -103,6 +105,8 @@ namespace Swagger4WCF
 
 						definitionList.AddRange(resparameters);
 						definitionList = definitionList.Distinct().ToList();
+					 	var stType = definitionList.FirstOrDefault(t => t.Name == "Stream");
+						definitionList.Remove(stType);
 						int beforeCnt = definitionList.Count;
 						for (int i = 0; i < beforeCnt; i++)
 						{
@@ -121,16 +125,17 @@ namespace Swagger4WCF
 				private MethodDefinition[] AddMethodsForType(TypeDefinition type, Documentation documentation)
 				{
 					var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && _Method.GetCustomAttribute<OperationContractAttribute>() != null).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
+					var errorAttributes = type.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponceAttribute").ToList();
 					var methodsGroupedByPath = _methods.GroupBy(m =>
 					{
 						var attribute = m.GetCustomAttribute<WebInvokeAttribute>() ?? m.GetCustomAttribute<WebGetAttribute>();
 						if (attribute == null)
 							return string.Empty;
 
-							var uriTemplate = attribute?.Value<string>("UriTemplate");
-							if(uriTemplate.IndexOf('?') > 0)
-								return uriTemplate.Substring(0, uriTemplate.IndexOf('?'));
-							return uriTemplate;
+						var uriTemplate = attribute?.Value<string>("UriTemplate");
+						if (uriTemplate.IndexOf('?') > 0)
+							return uriTemplate.Substring(0, uriTemplate.IndexOf('?'));
+						return uriTemplate;
 					}, key => key).ToDictionary(k => k.Key, v => v);
 					using (new Block(this))
 					{
@@ -140,8 +145,8 @@ namespace Swagger4WCF
 								continue;
 
 							this.Add("/", _method, ":");
-							foreach(var m in methodsGroupedByPath[_method])
-								this.Add(m, documentation);
+							foreach (var m in methodsGroupedByPath[_method])
+								this.Add(m, documentation, errorAttributes);
 						}
 					}
 
@@ -153,8 +158,13 @@ namespace Swagger4WCF
 					this.m_Builder.AppendLine(this.m_Tabulation.ToString() + string.Concat(line));
 				}
 
-				private void Add(MethodDefinition method, Documentation documentation)
+				private void Add(MethodDefinition method, Documentation documentation, List<CustomAttribute> typeResponceAttributes)
 				{
+
+					var methodResponceAttributes = method.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponceAttribute").ToList();
+					var methodCodes = new HashSet<int>(methodResponceAttributes.Select(attr => attr.Value<int>("Code")));
+					methodResponceAttributes.AddRange(typeResponceAttributes.Where(attr => !methodCodes.Contains(attr.Value<int>("Code"))));
+
 					using (new Block(this))
 					{
 						var _attribute = method.GetCustomAttribute<WebInvokeAttribute>();
@@ -192,6 +202,12 @@ namespace Swagger4WCF
 							this.Add("produces:");
 							using (new Block(this))
 							{
+								var okResponceAttr = methodResponceAttributes.FirstOrDefault(attr => attr.Value<int>("Code") == 200);
+								foreach (var attrib in methodResponceAttributes.Where(attr => attr.Value("ContentType") == true))
+								{
+									this.Add($"- {attrib.Value<string>("ContentType")}");
+								}
+								
 								if (_attribute.Value("ResponseFormat") && _attribute.Value<WebMessageFormat>("ResponseFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
 								else { this.Add("- application/xml"); }
 							}
@@ -215,26 +231,58 @@ namespace Swagger4WCF
 							this.Add("responses:");
 							using (new Block(this))
 							{
-								this.Add("200:");
-								using (new Block(this))
+								if (!methodResponceAttributes.Any())
 								{
-									if (documentation != null && documentation[method].Response != null)
+									this.Add("200:");
+									using (new Block(this))
 									{
-										this.Add("description: ", documentation[method].Response);
-									}
-									else
-									{
-										this.Add("description: OK");
-									}
-									if (method.ReturnType.Resolve() != method.Module.ImportReference(typeof(void)).Resolve())
-									{
-										this.Add("schema:");
-										using (new Block(this))
+										if (documentation != null && documentation[method].Response != null)
 										{
-											this.Add(method.ReturnType, documentation);
+											this.Add("description: ", documentation[method].Response);
+										}
+										else
+										{
+											this.Add("description: OK");
+										}
+										if (method.ReturnType.Resolve() != method.Module.ImportReference(typeof(void)).Resolve())
+										{
+											this.Add("schema:");
+											using (new Block(this))
+											{
+												this.Add(method.ReturnType, documentation);
+											}
 										}
 									}
 								}
+								else
+								{
+									foreach (var attr in methodResponceAttributes)
+									{
+										var returnCode = attr.Value<int>("Code");
+										this.Add($"{returnCode}:");
+										using (new Block(this))
+										{
+											this.Add($"description: {attr.Value<string>("Description")}");
+
+											if (method.ReturnType.Resolve() != method.Module.ImportReference(typeof(void)).Resolve())
+											{
+												this.Add("schema:");
+												using (new Block(this))
+												{
+													if (returnCode == 200)
+													{
+														this.Add(method.ReturnType, documentation);
+													}
+													else
+													{
+														this.Add("type: \"string\"");
+													}
+												}
+											}
+										}
+									}
+								}
+
 								this.Add("default:");
 								using (new Block(this))
 								{
@@ -321,6 +369,11 @@ namespace Swagger4WCF
 					{
 						this.Add("type: \"string\"");
 						this.Add("format: date-time");
+					}
+					else if (type.Resolve() == type.Module.ImportReference(typeof(Stream)).Resolve())
+					{
+						this.Add("type: \"string\"");
+						this.Add("format: binary");
 					}
 					else if (type.IsArray)
 					{
