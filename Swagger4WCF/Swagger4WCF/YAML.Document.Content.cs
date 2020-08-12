@@ -125,7 +125,7 @@ namespace Swagger4WCF
 				private MethodDefinition[] AddMethodsForType(TypeDefinition type, Documentation documentation)
 				{
 					var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && _Method.GetCustomAttribute<OperationContractAttribute>() != null).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
-					var errorAttributes = type.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponceAttribute").ToList();
+					var errorAttributes = type.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute").ToList();
 					var methodsGroupedByPath = _methods.GroupBy(m =>
 					{
 						var attribute = m.GetCustomAttribute<WebInvokeAttribute>() ?? m.GetCustomAttribute<WebGetAttribute>();
@@ -158,12 +158,12 @@ namespace Swagger4WCF
 					this.m_Builder.AppendLine(this.m_Tabulation.ToString() + string.Concat(line));
 				}
 
-				private void Add(MethodDefinition method, Documentation documentation, List<CustomAttribute> typeResponceAttributes)
+				private void Add(MethodDefinition method, Documentation documentation, List<CustomAttribute> typeResponseAttributes)
 				{
 
-					var methodResponceAttributes = method.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponceAttribute").ToList();
-					var methodCodes = new HashSet<int>(methodResponceAttributes.Select(attr => attr.Value<int>("Code")));
-					methodResponceAttributes.AddRange(typeResponceAttributes.Where(attr => !methodCodes.Contains(attr.Value<int>("Code"))));
+					var methodResponseAttributes = method.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute").ToList();
+					var methodCodes = new HashSet<int>(methodResponseAttributes.Select(attr => attr.Value<int>("Code")));
+					methodResponseAttributes.AddRange(typeResponseAttributes.Where(attr => !methodCodes.Contains(attr.Value<int>("Code"))));
 
 					using (new Block(this))
 					{
@@ -202,8 +202,8 @@ namespace Swagger4WCF
 							this.Add("produces:");
 							using (new Block(this))
 							{
-								var okResponceAttr = methodResponceAttributes.FirstOrDefault(attr => attr.Value<int>("Code") == 200);
-								foreach (var attrib in methodResponceAttributes.Where(attr => attr.Value("ContentType") == true))
+								var okResponceAttr = methodResponseAttributes.FirstOrDefault(attr => attr.Value<int>("Code") == 200);
+								foreach (var attrib in methodResponseAttributes.Where(attr => attr.Value("ContentType") == true))
 								{
 									this.Add($"- {attrib.Value<string>("ContentType")}");
 								}
@@ -231,7 +231,7 @@ namespace Swagger4WCF
 							this.Add("responses:");
 							using (new Block(this))
 							{
-								if (!methodResponceAttributes.Any())
+								if (!methodResponseAttributes.Any())
 								{
 									this.Add("200:");
 									using (new Block(this))
@@ -256,7 +256,7 @@ namespace Swagger4WCF
 								}
 								else
 								{
-									foreach (var attr in methodResponceAttributes)
+									foreach (var attr in methodResponseAttributes)
 									{
 										var returnCode = attr.Value<int>("Code");
 										this.Add($"{returnCode}:");
