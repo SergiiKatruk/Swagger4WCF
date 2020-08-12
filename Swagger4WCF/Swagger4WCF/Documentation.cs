@@ -89,7 +89,7 @@ namespace Swagger4WCF
 
         public string this[MethodDefinition method, ParameterDefinition parameter]
         {
-            get { return this[string.Concat("A:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(", ", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ").", parameter.Name)]; }
+            get { return this[string.Concat("A:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ").", parameter.Name)]; }
         }
 
         public string this[string identity]
