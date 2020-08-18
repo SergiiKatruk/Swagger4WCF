@@ -298,10 +298,20 @@ namespace Swagger4WCF
 				private void Add(MethodDefinition method, ParameterDefinition parameter, Documentation documentation)
 				{
 					var _type = parameter.ParameterType;
+					if (parameter.ParameterType is GenericInstanceType genericInstanceType)
+						_type = genericInstanceType.GenericArguments[0];
 					this.Add("- name: ", parameter.Name);
 					using (new Block(this))
 					{
-						if (_type.Resolve() == _type.Module.ImportReference(typeof(string)).Resolve()
+						if (_type is TypeDefinition typeDef && typeDef.IsEnum)
+						{
+							this.Add("in: query");
+							if (documentation != null && documentation[method, parameter] != null) { this.Add("description: ", documentation[method, parameter]); }
+							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" : 
+								parameter.ParameterType.IsValueType.ToString().ToLower());
+							this.Add(parameter.ParameterType, documentation);
+						}
+						else if (_type.Resolve() == _type.Module.ImportReference(typeof(string)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(int)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(long)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(DateTime)).Resolve()
@@ -309,7 +319,8 @@ namespace Swagger4WCF
 						{
 							this.Add("in: query");
 							if (documentation != null && documentation[method, parameter] != null) { this.Add("description: ", documentation[method, parameter]); }
-							this.Add("required: ", parameter.ParameterType.IsValueType.ToString().ToLower());
+							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" :
+								parameter.ParameterType.IsValueType.ToString().ToLower());
 							this.Add(parameter.ParameterType, documentation);
 						}
 						else
@@ -331,6 +342,8 @@ namespace Swagger4WCF
 
 				private void Add(PropertyDefinition property, Documentation documentation)
 				{
+					if (property.FullName == "T System.Nullable`1::Value()")
+						return;
 					this.Add(property.Name, ":");
 					using (new Block(this))
 					{
@@ -341,11 +354,16 @@ namespace Swagger4WCF
 
 				private void Add(TypeReference type, Documentation documentation)
 				{
+					if(type is GenericInstanceType genericType)
+					{
+						type = genericType.GenericArguments[0].GetElementType();
+					}
 					if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve())
 					{
 						this.Add("type: \"string\"");
 					}
-					else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve())
+					else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve()
+							 || type.Resolve() == type.Module.ImportReference(typeof(bool?)).Resolve())
 					{
 						this.Add("type: \"boolean\"");
 					}
@@ -353,6 +371,11 @@ namespace Swagger4WCF
 					{
 						this.Add("type: \"number\"");
 						this.Add("format: int32");
+					}
+					else if (type.Resolve() == type.Module.ImportReference(typeof(short)).Resolve())
+					{
+						this.Add("type: \"number\"");
+						this.Add("format: int16");
 					}
 					else if (type.Resolve() == type.Module.ImportReference(typeof(long)).Resolve())
 					{
@@ -365,7 +388,8 @@ namespace Swagger4WCF
 						this.Add("type: \"number\"");
 						this.Add("format: decimal(9,2)");
 					}
-					else if (type.Resolve() == type.Module.ImportReference(typeof(DateTime)).Resolve())
+					else if (type.Resolve() == type.Module.ImportReference(typeof(DateTime)).Resolve()
+							 || type.Resolve() == type.Module.ImportReference(typeof(DateTime?)).Resolve())
 					{
 						this.Add("type: \"string\"");
 						this.Add("format: date-time");
@@ -404,7 +428,6 @@ namespace Swagger4WCF
 						{
 							this.Add("$ref: \"#/definitions/", type.Name, "\"");
 						}
-
 					}
 				}
 
@@ -419,6 +442,9 @@ namespace Swagger4WCF
 					{
 						return;
 					}
+					if (referenceType.IsGenericInstance || referenceType.IsGenericParameter)
+						return;
+
 					this.Add(referenceType.Name, ":");
 					using (new Block(this))
 					{
