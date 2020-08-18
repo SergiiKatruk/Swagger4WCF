@@ -306,13 +306,17 @@ namespace Swagger4WCF
 						if (_type is TypeDefinition typeDef && typeDef.IsEnum)
 						{
 							this.Add("in: query");
-							if (documentation != null && documentation[method, parameter] != null) { this.Add("description: ", documentation[method, parameter]); }
+							if (documentation != null && documentation[method, parameter] != null) 
+							{ 
+								this.Add("description: ", documentation[method, parameter]); 
+							}
 							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" : 
 								parameter.ParameterType.IsValueType.ToString().ToLower());
 							this.Add(parameter.ParameterType, documentation);
 						}
 						else if (_type.Resolve() == _type.Module.ImportReference(typeof(string)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(int)).Resolve()
+							|| _type.Resolve() == _type.Module.ImportReference(typeof(short)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(long)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(DateTime)).Resolve()
 							|| _type.IsArray)
@@ -330,7 +334,8 @@ namespace Swagger4WCF
 							{
 								this.Add("description: ", documentation[method, parameter]);
 							}
-							this.Add("required: ", parameter.ParameterType.IsValueType.ToString().ToLower());
+							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" :
+								parameter.ParameterType.IsValueType.ToString().ToLower());
 							this.Add("schema:");
 							using (new Block(this))
 							{
