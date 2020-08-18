@@ -67,7 +67,7 @@ namespace Swagger4WCF
 
         public string this[TypeDefinition type]
         {
-            get { return this[string.Concat("T:", type.FullName)]; }
+            get { return this[string.Concat("T:", type.FullName).Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
         }
 
         public Method this[MethodDefinition method]
@@ -76,15 +76,15 @@ namespace Swagger4WCF
             {
                 return new Method()
                 {
-                    Summary = this[string.Concat("M:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")")],
-                    Response = this[string.Concat("R:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")")]
+                    Summary = this[string.Concat("M:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")").Replace('<', '{').Replace('>', '}').Replace("`1", "")],
+                    Response = this[string.Concat("R:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")").Replace('<', '{').Replace('>', '}').Replace("`1", "")]
                 };
             }
         }
 
         public string this[PropertyDefinition property]
         {
-            get { return this[string.Concat("P:", property.DeclaringType.FullName, ".", property.Name)]; }
+            get { return this[string.Concat("P:", property.DeclaringType.FullName, ".", property.Name).Replace('<', '{').Replace('>', '}').Replace("`1", "").Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
         }
 
         public string this[MethodDefinition method, ParameterDefinition parameter]
