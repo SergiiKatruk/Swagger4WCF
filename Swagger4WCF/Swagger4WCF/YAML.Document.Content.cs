@@ -306,9 +306,13 @@ namespace Swagger4WCF
 						if (_type is TypeDefinition typeDef && typeDef.IsEnum)
 						{
 							this.Add("in: query");
-							if (documentation != null && documentation[method, parameter] != null) 
-							{ 
-								this.Add("description: ", documentation[method, parameter]); 
+							if (documentation != null && documentation[method, parameter] != null)
+							{
+								string xmlDoc = documentation[method, parameter];
+								List<string> enumValues = GetEnumValuesDescription(typeDef, documentation);
+								xmlDoc += $" {string.Join(", ", enumValues.ToArray())}.";
+
+								this.Add("description: ", xmlDoc);
 							}
 							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" : 
 								parameter.ParameterType.IsValueType.ToString().ToLower());
@@ -345,6 +349,22 @@ namespace Swagger4WCF
 					}
 				}
 
+				private List<string> GetEnumValuesDescription(TypeDefinition typeDef, Documentation documentation)
+				{
+					List<string> enumValues = new List<string>();
+					foreach (var field in typeDef.Fields)
+					{
+						if (field.Name == "value__")
+							continue;
+						var xmlDoc = documentation[field] ?? string.Empty;
+						if (!string.IsNullOrWhiteSpace(xmlDoc))
+							xmlDoc = $"({xmlDoc})";
+						enumValues.Add($"{field.Constant} - {field.Name}{xmlDoc}");
+					}
+
+					return enumValues;
+				}
+
 				private void Add(PropertyDefinition property, Documentation documentation)
 				{
 					if (property.FullName == "T System.Nullable`1::Value()")
@@ -353,7 +373,18 @@ namespace Swagger4WCF
 					using (new Block(this))
 					{
 						this.Add(property.PropertyType, documentation);
-						if (documentation != null && documentation[property] != null) { this.Add("description: ", documentation[property]); }
+						string description = documentation[property] ?? string.Empty;
+						var type = property.PropertyType;
+						if (type is GenericInstanceType genericType)
+						{
+							type = genericType.GenericArguments[0].GetElementType();
+						}
+						if (type is TypeDefinition typeDef && typeDef.IsEnum)
+						{
+							List<string> enumValues = GetEnumValuesDescription(typeDef, documentation);
+							description += $" {string.Join(", ", enumValues.ToArray())}.";
+						}
+						this.Add("description: ", description); 
 					}
 				}
 
@@ -412,14 +443,14 @@ namespace Swagger4WCF
 					}
 					else if (type is TypeDefinition typeDef && typeDef.IsEnum)
 					{
-						this.Add("type: \"string\"");
+						this.Add("type: number");
 						this.Add("enum:");
-
+						
 						foreach (var field in typeDef.Fields)
 						{
 							if (field.Name == "value__")
 								continue;
-							this.Add($"- {field.Name}");
+							this.Add($"- {field.Constant}");
 						}
 					}
 					else

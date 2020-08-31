@@ -87,6 +87,11 @@ namespace Swagger4WCF
             get { return this[string.Concat("P:", property.DeclaringType.FullName, ".", property.Name).Replace('<', '{').Replace('>', '}').Replace("`1", "").Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
         }
 
+        public string this[FieldDefinition field]
+        {
+            get { return this[string.Concat("F:", field.DeclaringType.FullName, ".", field.Name).Replace('<', '{').Replace('>', '}').Replace("`1", "").Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
+        }
+
         public string this[MethodDefinition method, ParameterDefinition parameter]
         {
             get { return this[string.Concat("A:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ").", parameter.Name).Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
