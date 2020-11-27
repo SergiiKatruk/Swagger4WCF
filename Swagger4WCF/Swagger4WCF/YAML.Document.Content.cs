@@ -1,6 +1,8 @@
 ﻿using Mono.Cecil;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -124,7 +126,8 @@ namespace Swagger4WCF
 
 				private MethodDefinition[] AddMethodsForType(TypeDefinition type, Documentation documentation)
 				{
-					var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && _Method.GetCustomAttribute<OperationContractAttribute>() != null).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
+					var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && (
+					_Method.GetCustomAttribute<OperationContractAttribute>() != null) || _Method.CustomAttributes.Any(attr => attr.AttributeType.Name.Contains("JsonOperationContract"))).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
 					var errorAttributes = type.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute").ToList();
 					var methodsGroupedByPath = _methods.GroupBy(m =>
 					{
@@ -384,9 +387,31 @@ namespace Swagger4WCF
 							List<string> enumValues = GetEnumValuesDescription(typeDef, documentation);
 							description += $" {string.Join(", ", enumValues.ToArray())}.";
 						}
-						this.Add("description: ", description); 
+						this.Add("description: ", description);
+						this.AddPropertyDefaultValue(property);
+						this.AddPropertyMaxLength(property);
 					}
 				}
+
+				private void AddPropertyMaxLength(PropertyDefinition property)
+				{
+					string maxLength = this.GetPropertyMaxLength(property);
+					if (!string.IsNullOrWhiteSpace(maxLength))
+						this.Add("maxLength: ", maxLength);
+				}
+
+				private void AddPropertyDefaultValue(PropertyDefinition property)
+				{
+					string defaultValue = this.GetPropertyDefaultValue(property);
+					if (!string.IsNullOrWhiteSpace(defaultValue))
+						this.Add("default: ", $"\"{defaultValue}\"");
+				}
+
+				private string GetPropertyDefaultValue(PropertyDefinition propertyDefinition) =>
+					propertyDefinition.GetCustomAttribute<DefaultValueAttribute>()?.ConstructorArguments[0].Value.ToString();
+
+				private string GetPropertyMaxLength(PropertyDefinition propertyDefinition) =>
+					propertyDefinition.GetCustomAttribute<MaxLengthAttribute>()?.ConstructorArguments[0].Value.ToString();
 
 				private void Add(TypeReference type, Documentation documentation)
 				{
@@ -492,6 +517,7 @@ namespace Swagger4WCF
 
 						if (referenceType.Resolve().Properties.Count > 0)
 						{
+							var requiredProperties = new List<string>();
 							this.Add("properties:");
 							using (new Block(this))
 							{
@@ -499,12 +525,22 @@ namespace Swagger4WCF
 
 								foreach (var propertyDefinition in propertyDefinitions)
 								{
+									if (this.IsRequired(propertyDefinition))
+										requiredProperties.Add(propertyDefinition.Name);
 									this.Add(propertyDefinition, documentation);
 								}
+							}
+							if(requiredProperties.Any())
+							{
+								this.Add($"required: [{string.Join(",", requiredProperties)}]");
 							}
 						}
 					}
 				}
+
+				private bool IsRequired(PropertyDefinition propertyDefinition) =>
+					propertyDefinition.GetCustomAttribute<DataMemberAttribute>()?.Value<bool>(nameof(DataMemberAttribute.IsRequired)) == true ||
+					propertyDefinition.GetCustomAttribute<RequiredAttribute>() != null;
 			}
 		}
 	}
