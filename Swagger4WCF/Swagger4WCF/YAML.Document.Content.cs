@@ -411,7 +411,21 @@ namespace Swagger4WCF
 					propertyDefinition.GetCustomAttribute<DefaultValueAttribute>()?.ConstructorArguments[0].Value.ToString();
 
 				private string GetPropertyMaxLength(PropertyDefinition propertyDefinition) =>
-					propertyDefinition.GetCustomAttribute<MaxLengthAttribute>()?.ConstructorArguments[0].Value.ToString();
+					propertyDefinition.GetCustomAttribute<MaxLengthAttribute>()?.ConstructorArguments[0].Value.ToString() ??
+					this.GetCtorValue(propertyDefinition.CustomAttributes.FirstOrDefault(attr => attr.AttributeType.Name == "JsonConverterAttribute" && attr.ConstructorArguments.Count == 2 &&
+						(attr.ConstructorArguments[0].Value as TypeDefinition)?.Name.Contains("MaxLength") == true)?.ConstructorArguments[1]);
+
+				private string GetCtorValue(CustomAttributeArgument? customAttribute)
+				{
+					try
+					{
+						if (customAttribute.HasValue)
+							return ((CustomAttributeArgument)((CustomAttributeArgument)((customAttribute.Value).Value as CustomAttributeArgument[])[0]).Value).Value.ToString();
+					}
+					catch(Exception)
+					{ }
+					return null;
+				}
 
 				private void Add(TypeReference type, Documentation documentation)
 				{
