@@ -199,7 +199,9 @@ namespace Swagger4WCF
 							this.Add("consumes:");
 							using (new Block(this))
 							{
-								if (_attribute.Value("RequestFormat") && _attribute.Value<WebMessageFormat>("RequestFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
+								if(_parameters.Count == 1 && this.IsStream(_parameters[0].ParameterType))
+									this.Add("- multipart/form-data");
+								else if (_attribute.Value("RequestFormat") && _attribute.Value<WebMessageFormat>("RequestFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
 								else { this.Add("- application/xml"); }
 							}
 							this.Add("produces:");
@@ -336,21 +338,32 @@ namespace Swagger4WCF
 						}
 						else
 						{
-							this.Add("in: body");
 							if (documentation != null && documentation[method, parameter] != null)
 							{
 								this.Add("description: ", documentation[method, parameter]);
 							}
 							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" :
 								parameter.ParameterType.IsValueType.ToString().ToLower());
-							this.Add("schema:");
-							using (new Block(this))
+							if (this.IsStream(parameter.ParameterType))
 							{
-								this.Add(parameter.ParameterType, documentation);
+								this.Add("in: formData");
+								this.Add("type: file");
+							}
+							else
+							{
+								this.Add("in: body");
+								this.Add("schema:");
+								using (new Block(this))
+								{
+									this.Add(parameter.ParameterType, documentation);
+								}
 							}
 						}
 					}
 				}
+
+				private bool IsStream(TypeReference type) =>
+					type.Resolve() == type.Module.ImportReference(typeof(Stream)).Resolve();
 
 				private List<string> GetEnumValuesDescription(TypeDefinition typeDef, Documentation documentation)
 				{
