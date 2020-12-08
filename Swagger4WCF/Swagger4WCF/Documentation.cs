@@ -76,10 +76,18 @@ namespace Swagger4WCF
             {
                 return new Method()
                 {
-                    Summary = this[string.Concat("M:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")").Replace('<', '{').Replace('>', '}').Replace("`1", "")],
-                    Response = this[string.Concat("R:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")").Replace('<', '{').Replace('>', '}').Replace("`1", "")]
+                    Summary = this[string.Concat("M:", method.DeclaringType.FullName, ".", method.Name, this.GetMethodParametersInfo(method)).Replace('<', '{').Replace('>', '}').Replace("`1", "")],
+                    Response = this[string.Concat("R:", method.DeclaringType.FullName, ".", method.Name, this.GetMethodParametersInfo(method)).Replace('<', '{').Replace('>', '}').Replace("`1", "")]
                 };
             }
+        }
+
+        public string GetMethodParametersInfo(MethodDefinition method)
+		{
+            if (!method.Parameters.Any())
+                return string.Empty;
+
+            return string.Concat("(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")");
         }
 
         public string this[PropertyDefinition property]
