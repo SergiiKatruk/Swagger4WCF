@@ -107,7 +107,7 @@ namespace Swagger4WCF
 
 						definitionList.AddRange(resparameters);
 						definitionList = definitionList.Distinct().ToList();
-					 	var stType = definitionList.FirstOrDefault(t => t.Name == "Stream");
+						var stType = definitionList.FirstOrDefault(t => t.Name == "Stream");
 						definitionList.Remove(stType);
 						int beforeCnt = definitionList.Count;
 						for (int i = 0; i < beforeCnt; i++)
@@ -116,10 +116,14 @@ namespace Swagger4WCF
 						}
 
 						int afterCnt = definitionList.Count;
-
-						for (int i = beforeCnt; i < afterCnt; i++)
+						while (afterCnt > beforeCnt)
 						{
-							ParseComplexType(definitionList[i], documentation);
+							for (int i = beforeCnt; i < afterCnt; i++)
+							{
+								ParseComplexType(definitionList[i], documentation);
+							}
+							beforeCnt = afterCnt;
+							afterCnt = definitionList.Count;
 						}
 					}
 				}
@@ -199,7 +203,7 @@ namespace Swagger4WCF
 							this.Add("consumes:");
 							using (new Block(this))
 							{
-								if(_parameters.Count == 1 && this.IsStream(_parameters[0].ParameterType))
+								if (_parameters.Count == 1 && this.IsStream(_parameters[0].ParameterType))
 									this.Add("- multipart/form-data");
 								else if (_attribute.Value("RequestFormat") && _attribute.Value<WebMessageFormat>("RequestFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
 								else { this.Add("- application/xml"); }
@@ -212,7 +216,7 @@ namespace Swagger4WCF
 								{
 									this.Add($"- {attrib.Value<string>("ContentType")}");
 								}
-								
+
 								if (_attribute.Value("ResponseFormat") && _attribute.Value<WebMessageFormat>("ResponseFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
 								else { this.Add("- application/xml"); }
 							}
@@ -226,12 +230,12 @@ namespace Swagger4WCF
 										this.Add(method, _parameter, documentation);
 									}
 								}
-								this.Add("tags:");
-								using (new Block(this))
-								{
-									var attribute = method.DeclaringType.GetCustomAttribute<ServiceContractAttribute>();
-									this.Add("- ", attribute?.Value<string>("Name") ?? method.DeclaringType.Name);
-								}
+							}
+							this.Add("tags:");
+							using (new Block(this))
+							{
+								var attribute = method.DeclaringType.GetCustomAttribute<ServiceContractAttribute>();
+								this.Add("- ", attribute?.Value<string>("Name") ?? method.DeclaringType.Name);
 							}
 							this.Add("responses:");
 							using (new Block(this))
@@ -319,7 +323,7 @@ namespace Swagger4WCF
 
 								this.Add("description: ", xmlDoc);
 							}
-							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" : 
+							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" :
 								parameter.ParameterType.IsValueType.ToString().ToLower());
 							this.Add(parameter.ParameterType, documentation);
 						}
@@ -435,14 +439,14 @@ namespace Swagger4WCF
 						if (customAttribute.HasValue)
 							return ((CustomAttributeArgument)((CustomAttributeArgument)((customAttribute.Value).Value as CustomAttributeArgument[])[0]).Value).Value.ToString();
 					}
-					catch(Exception)
+					catch (Exception)
 					{ }
 					return null;
 				}
 
 				private void Add(TypeReference type, Documentation documentation)
 				{
-					if(type is GenericInstanceType genericType)
+					if (type is GenericInstanceType genericType)
 					{
 						type = genericType.GenericArguments[0].GetElementType();
 					}
@@ -497,7 +501,7 @@ namespace Swagger4WCF
 					{
 						this.Add("type: number");
 						this.Add("enum:");
-						
+
 						foreach (var field in typeDef.Fields)
 						{
 							if (field.Name == "value__")
@@ -507,9 +511,10 @@ namespace Swagger4WCF
 					}
 					else
 					{
-						if (type.Resolve()?.GetCustomAttribute<DataContractAttribute>() == null)
+						if (type.Resolve()?.GetCustomAttribute<DataContractAttribute>() != null)
 						{
-							definitionList.Add(type);
+							if (!definitionList.Contains(type))
+								definitionList.Add(type);
 							this.Add("$ref: \"#/definitions/", type.Name, "\"");
 						}
 						else
@@ -557,7 +562,7 @@ namespace Swagger4WCF
 									this.Add(propertyDefinition, documentation);
 								}
 							}
-							if(requiredProperties.Any())
+							if (requiredProperties.Any())
 							{
 								this.Add($"required: [{string.Join(",", requiredProperties)}]");
 							}
