@@ -153,7 +153,7 @@ namespace Swagger4WCF
 
 							this.Add("/", _method, ":");
 							foreach (var m in methodsGroupedByPath[_method])
-								this.Add(m, documentation, errorAttributes);
+								this.Add(m, documentation, errorAttributes, _method);
 						}
 					}
 
@@ -165,7 +165,7 @@ namespace Swagger4WCF
 					this.m_Builder.AppendLine(this.m_Tabulation.ToString() + string.Concat(line));
 				}
 
-				private void Add(MethodDefinition method, Documentation documentation, List<CustomAttribute> typeResponseAttributes)
+				private void Add(MethodDefinition method, Documentation documentation, List<CustomAttribute> typeResponseAttributes, string path = "")
 				{
 
 					var methodResponseAttributes = method.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute").ToList();
@@ -188,8 +188,6 @@ namespace Swagger4WCF
 						{
 							return;
 						}
-
-						//this.Add("/", _attribute.Value<string>("UriTemplate") ?? method.Name, ":");
 
 						this.Add(_attribute.Value<string>("Method").ToLower(), ":");
 						var _parameters = method.Parameters;
@@ -227,7 +225,7 @@ namespace Swagger4WCF
 								{
 									foreach (var _parameter in _parameters)
 									{
-										this.Add(method, _parameter, documentation);
+										this.Add(method, _parameter, documentation, path);
 									}
 								}
 							}
@@ -304,7 +302,7 @@ namespace Swagger4WCF
 					}
 				}
 
-				private void Add(MethodDefinition method, ParameterDefinition parameter, Documentation documentation)
+				private void Add(MethodDefinition method, ParameterDefinition parameter, Documentation documentation, string path = "")
 				{
 					var _type = parameter.ParameterType;
 					if (parameter.ParameterType is GenericInstanceType genericInstanceType)
@@ -330,14 +328,23 @@ namespace Swagger4WCF
 						else if (_type.Resolve() == _type.Module.ImportReference(typeof(string)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(int)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(short)).Resolve()
+							|| _type.Resolve() == _type.Module.ImportReference(typeof(decimal)).Resolve()
+							|| _type.Resolve() == _type.Module.ImportReference(typeof(long)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(long)).Resolve()
 							|| _type.Resolve() == _type.Module.ImportReference(typeof(DateTime)).Resolve()
 							|| _type.IsArray)
 						{
-							this.Add("in: query");
-							if (documentation != null && documentation[method, parameter] != null) { this.Add("description: ", documentation[method, parameter]); }
-							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" :
-								parameter.ParameterType.IsValueType.ToString().ToLower());
+							bool inPath = path.Contains("{" + parameter.Name + "}");
+							if (inPath)
+								this.Add("in: path");
+							else
+								this.Add("in: query");
+							if (documentation != null && documentation[method, parameter] != null) 
+							{ 
+								this.Add("description: ", documentation[method, parameter]); 
+							}
+							bool isRequired = inPath || (parameter.ParameterType.IsValueType && !parameter.ParameterType.FullName.Contains("System.Nullable"));
+							this.Add("required: ", isRequired ? "true" : "false");
 							this.Add(parameter.ParameterType, documentation);
 						}
 						else
