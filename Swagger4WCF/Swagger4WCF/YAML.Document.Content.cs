@@ -40,15 +40,13 @@ namespace Swagger4WCF
 					return this.m_Builder.ToString();
 				}
 
-
 				private Content(TypeDefinition type, Documentation documentation, AssemblyDefinition assembly)
 				{
-					this.Add("swagger: '2.0'");
+					this.Add("openapi: '3.0.3'");
 					this.Add("info:");
 					using (new Block(this))
 					{
 						this.Add("title: ", type.Name);
-						if (documentation[type] != null) { this.Add("description: ", documentation[type]); }
 						var _customAttribute = type.Module.Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
 						var _argument = _customAttribute?.Argument<string>(0);
 						if (_argument != null)
@@ -56,14 +54,12 @@ namespace Swagger4WCF
 							this.Add($"version: \"{ _argument }\"");
 						}
 					}
-					this.Add("host: localhost");
-					this.Add("schemes:");
+					this.Add("servers:");
 					using (new Block(this))
 					{
-						this.Add("- http");
-						this.Add("- https");
+						this.Add($"- url: http://localhost/{type.Name}");
+						this.Add($"- url: https://localhost/{type.Name}");
 					}
-					this.Add("basePath: /", type.Name);
 					this.Add("paths:");
 
 					var _allMethods = new List<MethodDefinition>();
@@ -72,8 +68,12 @@ namespace Swagger4WCF
 						allTypes.AddRange(type.Interfaces.Select(interf => assembly.MainModule.GetType(interf.InterfaceType.FullName)));
 						allTypes.ForEach(currentTypes => _allMethods.AddRange(AddMethodsForType(currentTypes, documentation)));
 					}
-					this.Add("definitions:");
-					AddDefinitionsForMethods(documentation, _allMethods);
+					this.Add("components:");
+					using (new Block(this))
+					{
+						this.Add("schemas:");
+						AddDefinitionsForMethods(documentation, _allMethods);
+					}
 				}
 
 				private void AddDefinitionsForMethods(Documentation documentation, List<MethodDefinition> _methods)
