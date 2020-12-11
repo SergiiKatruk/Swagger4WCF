@@ -1,16 +1,13 @@
 ﻿using Mono.Cecil;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Xml;
 using System.Xml.Linq;
 
-namespace Swagger4WCF
+namespace Swagger4WCF.YAML
 {
-    public class Documentation
+	public class Documentation
     {
         private Dictionary<string, string> m_Dictionary = new Dictionary<string, string>();
 

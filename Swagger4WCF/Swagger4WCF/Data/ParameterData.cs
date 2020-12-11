@@ -1,10 +1,7 @@
 ﻿using Mono.Cecil;
+using Swagger4WCF.YAML;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Swagger4WCF.Data
 {

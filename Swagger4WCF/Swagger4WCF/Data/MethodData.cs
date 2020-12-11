@@ -1,11 +1,10 @@
 ﻿using Mono.Cecil;
-using System;
+using Swagger4WCF.YAML;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
+using System.ServiceModel.Web;
 
 namespace Swagger4WCF.Data
 {
@@ -15,6 +14,7 @@ namespace Swagger4WCF.Data
 		public string Name { get; private set; }
 		public WebInvokeInfo WebInvoke { get; private set; }
 		public List<ResponseInfo> ResponseInfos { get; private set; }
+		public string ResponceContent { get; private set; }
 
 		public MethodDefinition MethodDefinition { get; }
 		public TypeData ReturnType { get; }
@@ -35,6 +35,19 @@ namespace Swagger4WCF.Data
 			this.Summary = documentation[methodDefinition].Summary;
 			this.Tag = methodDefinition.DeclaringType.GetCustomAttribute<ServiceContractAttribute>()?.Value<string>("Name") ?? methodDefinition.DeclaringType.Name;
 			this.ReturnType = new TypeData(methodDefinition.ReturnType.Resolve(), documentation);
+			this.InitializeResponseContent();
+		}
+
+		private void InitializeResponseContent()
+		{
+			string responseFormat = "application/json:";
+
+			if (this.Parameters.Count == 1 && this.Parameters[0].IsStream)
+				responseFormat = "multipart/form-data:";
+			else if (this.WebInvoke.ResponseFormat == WebMessageFormat.Xml)
+				responseFormat = "application/xml:";
+
+			this.ResponceContent = responseFormat;
 		}
 
 		private void InitializeResponceInfo(MethodDefinition methodDefinition)
