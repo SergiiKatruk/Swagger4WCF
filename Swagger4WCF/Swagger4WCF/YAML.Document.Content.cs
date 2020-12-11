@@ -1,15 +1,11 @@
 ﻿using Mono.Cecil;
+using Swagger4WCF.Data;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime;
 using System.Runtime.Serialization;
-using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Text;
 
@@ -23,7 +19,8 @@ namespace Swagger4WCF
 			{
 				private StringBuilder m_Builder = new StringBuilder();
 				private Tabulation m_Tabulation = new Tabulation("  ", 0);
-				private List<TypeReference> definitionList = new List<TypeReference>();
+				private Dictionary<string, TypeData> definitionList = new Dictionary<string, TypeData>();
+				private HashSet<string> addedTypes = new HashSet<string>();
 
 				static public Document Generate(TypeDefinition type, Documentation documentation, AssemblyDefinition assembly)
 				{
@@ -62,7 +59,7 @@ namespace Swagger4WCF
 					}
 					this.Add("paths:");
 
-					var _allMethods = new List<MethodDefinition>();
+					var _allMethods = new List<MethodData>();
 					{
 						var allTypes = new List<TypeDefinition> { type };
 						allTypes.AddRange(type.Interfaces.Select(interf => assembly.MainModule.GetType(interf.InterfaceType.FullName)));
@@ -76,74 +73,37 @@ namespace Swagger4WCF
 					}
 				}
 
-				private void AddDefinitionsForMethods(Documentation documentation, List<MethodDefinition> _methods)
+				private void AddDefinitionsForMethods(Documentation documentation, List<MethodData> _methods)
 				{
 					using (new Block(this))
 					{
-						var responses = _methods.Select(_Method => _Method.ReturnType).Distinct()
+						foreach (var type in _methods.Select(_Method => _Method.ReturnType).Distinct()
 							.OrderBy(typeRef => typeRef.Name)
-							.Where(typeRef =>
-								!(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(void)).Resolve())
-								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(bool)).Resolve())
-								&& !(typeRef.Resolve() ==
-									 typeRef.Resolve().Module.ImportReference(typeof(string)).Resolve())
-								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(int)).Resolve())
-								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(long)).Resolve())
-								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
-							.Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
-						definitionList.AddRange(responses);
+							.Where(typeRef => !typeRef.IsValueType && typeRef.Name != "Stream"))
+							definitionList[type.Type.FullName] = type;
 
-						var resparameters = _methods.SelectMany(_Method => _Method.Parameters).Select(x => x.ParameterType)
+						foreach (var type in _methods.SelectMany(_Method => _Method.Parameters).Select(x => x.TypeData)
 							.OrderBy(typeRef => typeRef.Name)
-							.Where(typeRef =>
-								!(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(void)).Resolve())
-								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(bool)).Resolve())
-								&& !(typeRef.Resolve() ==
-									 typeRef.Resolve().Module.ImportReference(typeof(string)).Resolve())
-								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(int)).Resolve())
-								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(long)).Resolve())
-								&& !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
-							.Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
+							.Where(typeRef => !typeRef.IsValueType && typeRef.Name != "Stream"))
+							definitionList[type.Type.FullName] = type;
 
-						definitionList.AddRange(resparameters);
-						definitionList = definitionList.Distinct().ToList();
-						var stType = definitionList.FirstOrDefault(t => t.Name == "Stream");
-						definitionList.Remove(stType);
-						int beforeCnt = definitionList.Count;
-						for (int i = 0; i < beforeCnt; i++)
+						while (this.definitionList.Any())
 						{
-							ParseComplexType(definitionList[i], documentation);
-						}
-
-						int afterCnt = definitionList.Count;
-						while (afterCnt > beforeCnt)
-						{
-							for (int i = beforeCnt; i < afterCnt; i++)
+							var currentDef = this.definitionList;
+							this.definitionList = new Dictionary<string, TypeData>();
+							foreach (var def in currentDef)
 							{
-								ParseComplexType(definitionList[i], documentation);
+								this.addedTypes.Add(def.Key);
+								ParseComplexType(def.Value, documentation);
 							}
-							beforeCnt = afterCnt;
-							afterCnt = definitionList.Count;
 						}
 					}
 				}
 
-				private MethodDefinition[] AddMethodsForType(TypeDefinition type, Documentation documentation)
+				private List<MethodData> AddMethodsForType(TypeDefinition type, Documentation documentation)
 				{
-					var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && (
-					_Method.GetCustomAttribute<OperationContractAttribute>() != null) || _Method.CustomAttributes.Any(attr => attr.AttributeType.Name.Contains("JsonOperationContract"))).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
-					var errorAttributes = type.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute").ToList();
-					var methodsGroupedByPath = _methods.GroupBy(m =>
-					{
-						var attribute = m.GetCustomAttribute<WebInvokeAttribute>() ?? m.GetCustomAttribute<WebGetAttribute>();
-						if (attribute == null)
-							return string.Empty;
-
-						var uriTemplate = attribute?.Value<string>("UriTemplate");
-						if (uriTemplate.IndexOf('?') > 0)
-							return uriTemplate.Substring(0, uriTemplate.IndexOf('?'));
-						return uriTemplate;
-					}, key => key).ToDictionary(k => k.Key, v => v);
+					var typeData = new TypeData(type, documentation);
+					var methodsGroupedByPath = typeData.Methods.GroupBy(m => m.WebInvoke.UriTemplate, key => key).ToDictionary(k => k.Key, v => v);
 					using (new Block(this))
 					{
 						foreach (var _method in methodsGroupedByPath.Keys)
@@ -153,11 +113,11 @@ namespace Swagger4WCF
 
 							this.Add("/", _method, ":");
 							foreach (var m in methodsGroupedByPath[_method])
-								this.Add(m, documentation, errorAttributes, _method);
+								this.Add(m, documentation);
 						}
 					}
 
-					return _methods;
+					return typeData.Methods;
 				}
 
 				private void Add(params string[] line)
@@ -165,124 +125,112 @@ namespace Swagger4WCF
 					this.m_Builder.AppendLine(this.m_Tabulation.ToString() + string.Concat(line));
 				}
 
-				private void Add(MethodDefinition method, Documentation documentation, List<CustomAttribute> typeResponseAttributes, string path = "")
+				private void Add(MethodData method, Documentation documentation)
 				{
-
-					var methodResponseAttributes = method.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute").ToList();
-					var methodCodes = new HashSet<int>(methodResponseAttributes.Select(attr => attr.Value<int>("Code")));
-					methodResponseAttributes.AddRange(typeResponseAttributes.Where(attr => !methodCodes.Contains(attr.Value<int>("Code"))));
+					if (method.WebInvoke == null || string.IsNullOrWhiteSpace(method.WebInvoke.Method))
+						return;
 
 					using (new Block(this))
 					{
-						var _attribute = method.GetCustomAttribute<WebInvokeAttribute>();
-						if (_attribute == null)
-						{
-							_attribute = method.GetCustomAttribute<WebGetAttribute>();
-							if (_attribute == null)
-							{
-								return;
-							}
-						}
-
-						if (string.IsNullOrEmpty(_attribute.Value<string>("Method")))
-						{
-							return;
-						}
-
-						this.Add(_attribute.Value<string>("Method").ToLower(), ":");
-						var _parameters = method.Parameters;
+						this.Add(method.WebInvoke.Method.ToLower(), ":");
 
 						using (new Block(this))
 						{
-							if (documentation != null && documentation[method].Summary != null)
+							if (!string.IsNullOrWhiteSpace(method.Summary))
 							{
-								this.Add("summary: ", documentation[method].Summary);
+								this.Add("summary: ", method.Summary);
 							}
-							this.Add("consumes:");
-							using (new Block(this))
-							{
-								if (_parameters.Count == 1 && this.IsStream(_parameters[0].ParameterType))
-									this.Add("- multipart/form-data");
-								else if (_attribute.Value("RequestFormat") && _attribute.Value<WebMessageFormat>("RequestFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
-								else { this.Add("- application/xml"); }
-							}
-							this.Add("produces:");
-							using (new Block(this))
-							{
-								var okResponceAttr = methodResponseAttributes.FirstOrDefault(attr => attr.Value<int>("Code") == 200);
-								foreach (var attrib in methodResponseAttributes.Where(attr => attr.Value("ContentType") == true))
-								{
-									this.Add($"- {attrib.Value<string>("ContentType")}");
-								}
+							string responseFormat = "application/json:";
 
-								if (_attribute.Value("ResponseFormat") && _attribute.Value<WebMessageFormat>("ResponseFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
-								else { this.Add("- application/xml"); }
-							}
-							if (_parameters.Count > 0)
+							if (method.Parameters.Count == 1 && method.Parameters[0].IsStream)
+								responseFormat = "multipart/form-data:";
+							else if (method.WebInvoke.ResponseFormat == WebMessageFormat.Xml)
+								responseFormat = "application/xml:";
+							var parameters = method.Parameters.Where(param => !param.InRequestBody);
+							var bodyParameters = method.Parameters.Where(param => param.InRequestBody);
+							if (bodyParameters.Count() > 1)
+								throw new Exception($"It isn't allowed to have multiply body parameters! Method: '{method.MethodDefinition.FullName}'.");
+							if (parameters.Any())
 							{
 								this.Add("parameters:");
 								using (new Block(this))
-								{
-									foreach (var _parameter in _parameters)
-									{
-										this.Add(method, _parameter, documentation, path);
-									}
-								}
+									foreach (ParameterData _parameter in parameters)
+										this.Add(_parameter, documentation);
 							}
+							if (bodyParameters.Any())
+							{
+								this.Add("requestBody:");
+								this.AddRequestBody(bodyParameters.First(), documentation, responseFormat);
+							}
+
 							this.Add("tags:");
 							using (new Block(this))
 							{
-								var attribute = method.DeclaringType.GetCustomAttribute<ServiceContractAttribute>();
-								this.Add("- ", attribute?.Value<string>("Name") ?? method.DeclaringType.Name);
+								this.Add("- ", method.Tag);
 							}
 							this.Add("responses:");
 							using (new Block(this))
 							{
-								if (!methodResponseAttributes.Any())
+								if (!method.ResponseInfos.Any())
 								{
 									this.Add("200:");
 									using (new Block(this))
 									{
-										if (documentation != null && documentation[method].Response != null)
+										if (!string.IsNullOrWhiteSpace(method.Description))
 										{
-											this.Add("description: ", documentation[method].Response);
+											this.Add("description: ", method.Description);
 										}
 										else
 										{
 											this.Add("description: OK");
 										}
-										if (method.ReturnType.Resolve() != method.Module.ImportReference(typeof(void)).Resolve())
+										if (method.MethodDefinition.ReturnType.Resolve() != method.MethodDefinition.Module.ImportReference(typeof(void)).Resolve())
 										{
-											this.Add("schema:");
+											this.Add("content:");
 											using (new Block(this))
 											{
-												this.Add(method.ReturnType, documentation);
+												this.Add(responseFormat);
+												using (new Block(this))
+												{
+													this.Add("schema:");
+													using (new Block(this))
+													{
+														this.Add(method.MethodDefinition.ReturnType, documentation);
+													}
+												}
 											}
 										}
 									}
 								}
 								else
 								{
-									foreach (var attr in methodResponseAttributes)
+									foreach (var response in method.ResponseInfos)
 									{
-										var returnCode = attr.Value<int>("Code");
-										this.Add($"{returnCode}:");
+										this.Add($"{response.Code}:");
 										using (new Block(this))
 										{
-											this.Add($"description: {attr.Value<string>("Description")}");
+											this.Add($"description: {response.Description}");
 
-											if (method.ReturnType.Resolve() != method.Module.ImportReference(typeof(void)).Resolve())
+											if (method.MethodDefinition.ReturnType.Resolve() != method.MethodDefinition.Module.ImportReference(typeof(void)).Resolve())
 											{
-												this.Add("schema:");
+												this.Add("content:");
 												using (new Block(this))
 												{
-													if (returnCode == 200)
+													this.Add(responseFormat);
+													using (new Block(this))
 													{
-														this.Add(method.ReturnType, documentation);
-													}
-													else
-													{
-														this.Add("type: \"string\"");
+														this.Add("schema:");
+														using (new Block(this))
+														{
+															if (response.Code == 200)
+															{
+																this.Add(method.MethodDefinition.ReturnType, documentation);
+															}
+															else
+															{
+																this.Add("type: string");
+															}
+														}
 													}
 												}
 											}
@@ -294,68 +242,88 @@ namespace Swagger4WCF
 								using (new Block(this))
 								{
 									this.Add("description: failed");
-									this.Add("schema:");
-									using (new Block(this)) { this.Add("type: \"string\""); }
+									this.Add("content:");
+									using (new Block(this))
+									{
+										this.Add(responseFormat);
+										using (new Block(this))
+										{
+											this.Add("schema:");
+											using (new Block(this))
+												this.Add("type: string");
+										}
+									}
 								}
 							}
 						}
 					}
 				}
 
-				private void Add(MethodDefinition method, ParameterDefinition parameter, Documentation documentation, string path = "")
+				private void AddRequestBody(ParameterData parameter, Documentation documentation, string responseFormat)
 				{
-					var _type = parameter.ParameterType;
-					if (parameter.ParameterType is GenericInstanceType genericInstanceType)
-						_type = genericInstanceType.GenericArguments[0];
+					using (new Block(this))
+					{
+						if (!string.IsNullOrWhiteSpace(parameter.Description))
+							this.Add("description: ", parameter.Description);
+						this.Add("required: ", parameter.IsRequired.ToString());
+						this.Add("content:");
+						using (new Block(this))
+						{
+							this.Add(responseFormat);
+							using (new Block(this))
+							{
+								this.Add("schema:");
+								using (new Block(this))
+									this.Add(parameter.Type, documentation);
+							}
+						}
+					}
+				}
+
+				private void Add(ParameterData parameter, Documentation documentation)
+				{
 					this.Add("- name: ", parameter.Name);
 					using (new Block(this))
 					{
-						if (_type is TypeDefinition typeDef && typeDef.IsEnum)
+						if (parameter.IsNullable)
 						{
 							this.Add("in: query");
-							if (documentation != null && documentation[method, parameter] != null)
+							if (!string.IsNullOrWhiteSpace(parameter.Description))
 							{
-								string xmlDoc = documentation[method, parameter];
-								List<string> enumValues = GetEnumValuesDescription(typeDef, documentation);
+								string xmlDoc = parameter.Description;
+								List<string> enumValues = parameter.TypeData.GetEnumValuesDescription();
 								xmlDoc += $" {string.Join(", ", enumValues.ToArray())}.";
 
 								this.Add("description: ", xmlDoc);
 							}
-							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" :
-								parameter.ParameterType.IsValueType.ToString().ToLower());
-							this.Add(parameter.ParameterType, documentation);
+							this.Add("required: ", parameter.IsRequired.ToString());
+							this.Add("schema:");
+							using (new Block(this))
+								this.Add(parameter.Type, documentation);
 						}
-						else if (_type.Resolve() == _type.Module.ImportReference(typeof(string)).Resolve()
-							|| _type.Resolve() == _type.Module.ImportReference(typeof(int)).Resolve()
-							|| _type.Resolve() == _type.Module.ImportReference(typeof(short)).Resolve()
-							|| _type.Resolve() == _type.Module.ImportReference(typeof(decimal)).Resolve()
-							|| _type.Resolve() == _type.Module.ImportReference(typeof(long)).Resolve()
-							|| _type.Resolve() == _type.Module.ImportReference(typeof(long)).Resolve()
-							|| _type.Resolve() == _type.Module.ImportReference(typeof(DateTime)).Resolve()
-							|| _type.IsArray)
+						else if (parameter.IsValueType)
 						{
-							bool inPath = path.Contains("{" + parameter.Name + "}");
-							if (inPath)
+							if (parameter.IsInPath)
 								this.Add("in: path");
 							else
 								this.Add("in: query");
-							if (documentation != null && documentation[method, parameter] != null) 
-							{ 
-								this.Add("description: ", documentation[method, parameter]); 
+							if (!string.IsNullOrWhiteSpace(parameter.Description))
+							{
+								this.Add("description: ", parameter.Description);
 							}
-							bool isRequired = inPath || (parameter.ParameterType.IsValueType && !parameter.ParameterType.FullName.Contains("System.Nullable"));
-							this.Add("required: ", isRequired ? "true" : "false");
-							this.Add(parameter.ParameterType, documentation);
+							this.Add("required: ", parameter.IsRequired ? "true" : "false");
+							this.Add("schema:");
+							using (new Block(this))
+								this.Add(parameter.Type, documentation);
 						}
 						else
 						{
-							if (documentation != null && documentation[method, parameter] != null)
+							if (!string.IsNullOrWhiteSpace(parameter.Description))
 							{
-								this.Add("description: ", documentation[method, parameter]);
+								this.Add("description: ", parameter.Description);
 							}
-							this.Add("required: ", parameter.ParameterType.FullName.Contains("System.Nullable") ? "false" :
-								parameter.ParameterType.IsValueType.ToString().ToLower());
-							if (this.IsStream(parameter.ParameterType))
+							this.Add("required: ", parameter.IsRequired.ToString());
+							if (parameter.IsStream)
 							{
 								this.Add("in: formData");
 								this.Add("type: file");
@@ -366,49 +334,26 @@ namespace Swagger4WCF
 								this.Add("schema:");
 								using (new Block(this))
 								{
-									this.Add(parameter.ParameterType, documentation);
+									this.Add(parameter.Type, documentation);
 								}
 							}
 						}
 					}
 				}
 
-				private bool IsStream(TypeReference type) =>
-					type.Resolve() == type.Module.ImportReference(typeof(Stream)).Resolve();
-
-				private List<string> GetEnumValuesDescription(TypeDefinition typeDef, Documentation documentation)
+				private void Add(PropertyData property, Documentation documentation)
 				{
-					List<string> enumValues = new List<string>();
-					foreach (var field in typeDef.Fields)
-					{
-						if (field.Name == "value__")
-							continue;
-						var xmlDoc = documentation[field] ?? string.Empty;
-						if (!string.IsNullOrWhiteSpace(xmlDoc))
-							xmlDoc = $"({xmlDoc})";
-						enumValues.Add($"{field.Constant} - {field.Name}{xmlDoc}");
-					}
-
-					return enumValues;
-				}
-
-				private void Add(PropertyDefinition property, Documentation documentation)
-				{
-					if (property.FullName == "T System.Nullable`1::Value()")
+					if (property.IsNullable)
 						return;
+
 					this.Add(property.Name, ":");
 					using (new Block(this))
 					{
-						this.Add(property.PropertyType, documentation);
-						string description = documentation[property] ?? string.Empty;
-						var type = property.PropertyType;
-						if (type is GenericInstanceType genericType)
+						this.Add(property.Property.PropertyType, documentation);
+						string description = property.Description;
+						if (property.TypeData.IsEnum)
 						{
-							type = genericType.GenericArguments[0].GetElementType();
-						}
-						if (type is TypeDefinition typeDef && typeDef.IsEnum)
-						{
-							List<string> enumValues = GetEnumValuesDescription(typeDef, documentation);
+							List<string> enumValues = property.TypeData.GetEnumValuesDescription();
 							description += $" {string.Join(", ", enumValues.ToArray())}.";
 						}
 						this.Add("description: ", description);
@@ -417,38 +362,16 @@ namespace Swagger4WCF
 					}
 				}
 
-				private void AddPropertyMaxLength(PropertyDefinition property)
+				private void AddPropertyMaxLength(PropertyData property)
 				{
-					string maxLength = this.GetPropertyMaxLength(property);
-					if (!string.IsNullOrWhiteSpace(maxLength))
-						this.Add("maxLength: ", maxLength);
+					if (!string.IsNullOrWhiteSpace(property.MaxLength))
+						this.Add("maxLength: ", property.MaxLength);
 				}
 
-				private void AddPropertyDefaultValue(PropertyDefinition property)
+				private void AddPropertyDefaultValue(PropertyData property)
 				{
-					string defaultValue = this.GetPropertyDefaultValue(property);
-					if (!string.IsNullOrWhiteSpace(defaultValue))
-						this.Add("default: ", $"\"{defaultValue}\"");
-				}
-
-				private string GetPropertyDefaultValue(PropertyDefinition propertyDefinition) =>
-					propertyDefinition.GetCustomAttribute<DefaultValueAttribute>()?.ConstructorArguments[0].Value.ToString();
-
-				private string GetPropertyMaxLength(PropertyDefinition propertyDefinition) =>
-					propertyDefinition.GetCustomAttribute<MaxLengthAttribute>()?.ConstructorArguments[0].Value.ToString() ??
-					this.GetCtorValue(propertyDefinition.CustomAttributes.FirstOrDefault(attr => attr.AttributeType.Name == "JsonConverterAttribute" && attr.ConstructorArguments.Count == 2 &&
-						(attr.ConstructorArguments[0].Value as TypeDefinition)?.Name.Contains("MaxLength") == true)?.ConstructorArguments[1]);
-
-				private string GetCtorValue(CustomAttributeArgument? customAttribute)
-				{
-					try
-					{
-						if (customAttribute.HasValue)
-							return ((CustomAttributeArgument)((CustomAttributeArgument)((customAttribute.Value).Value as CustomAttributeArgument[])[0]).Value).Value.ToString();
-					}
-					catch (Exception)
-					{ }
-					return null;
+					//if (!string.IsNullOrWhiteSpace(property.DefaultValue))
+					//	this.Add("default: ", $"{property.DefaultValue}");
 				}
 
 				private void Add(TypeReference type, Documentation documentation)
@@ -520,51 +443,44 @@ namespace Swagger4WCF
 					{
 						if (type.Resolve()?.GetCustomAttribute<DataContractAttribute>() != null)
 						{
-							if (!definitionList.Contains(type))
-								definitionList.Add(type);
-							this.Add("$ref: \"#/definitions/", type.Name, "\"");
+							if (!this.addedTypes.Contains(type.FullName))
+							{
+								this.addedTypes.Add(type.FullName);
+								definitionList[type.FullName] = new TypeData(type.Resolve(), documentation);
+							}
+							this.Add("$ref: \"#/components/schemas/", type.Name, "\"");
 						}
 						else
 						{
-							this.Add("$ref: \"#/definitions/", type.Name, "\"");
+							this.Add("$ref: \"#/components/schemas/", type.Name, "\"");
 						}
 					}
 				}
 
-				private void ParseComplexType(TypeReference referenceType, Documentation documentation)
+				private void ParseComplexType(TypeData type, Documentation documentation)
 				{
-					if (referenceType.Resolve() == referenceType.Module.ImportReference(typeof(void)).Resolve())
-					{
+					if (type.Name == "Nullable`1")
 						return;
-					}
-
-					if (referenceType.Resolve() == null)
-					{
-						return;
-					}
-					if (referenceType.IsGenericInstance || referenceType.IsGenericParameter)
-						return;
-
-					this.Add(referenceType.Name, ":");
+					this.Add(type.Name, ":");
 					using (new Block(this))
 					{
 						this.Add("type: object");
-						if (documentation != null && !String.IsNullOrEmpty(documentation[referenceType.Resolve()]))
+						if (!string.IsNullOrEmpty(type.Description))
 						{
-							this.Add(string.Concat("description: ", documentation[referenceType.Resolve()]));
+							this.Add(string.Concat("description: ", type.Description));
 						}
 
-						if (referenceType.Resolve().Properties.Count > 0)
+						if (type.Type.Properties.Count > 0)
 						{
 							var requiredProperties = new List<string>();
 							this.Add("properties:");
 							using (new Block(this))
 							{
-								var propertyDefinitions = referenceType.Resolve().Properties;
+								var propertyDefinitions = type.Properties;
 
 								foreach (var propertyDefinition in propertyDefinitions)
 								{
-									if (this.IsRequired(propertyDefinition))
+									if (propertyDefinition.IsRequired)
 										requiredProperties.Add(propertyDefinition.Name);
 									this.Add(propertyDefinition, documentation);
 								}
@@ -576,10 +492,6 @@ namespace Swagger4WCF
 						}
 					}
 				}
-
-				private bool IsRequired(PropertyDefinition propertyDefinition) =>
-					propertyDefinition.GetCustomAttribute<DataMemberAttribute>()?.Value<bool>(nameof(DataMemberAttribute.IsRequired)) == true ||
-					propertyDefinition.GetCustomAttribute<RequiredAttribute>() != null;
 			}
 		}
 	}
