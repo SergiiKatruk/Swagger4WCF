@@ -40,14 +40,14 @@ namespace Swagger4WCF.Data
 		private void InitializeResponceInfo(MethodDefinition methodDefinition)
 		{
 			var methodResponseAttributes = methodDefinition.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute");
-			var ClassResponseAttributes = methodDefinition.DeclaringType.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute");
+			var classResponseAttributes = methodDefinition.DeclaringType.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute");
 			this.ResponseInfos = new List<ResponseInfo>();
 
 			var methodResponces = new List<ResponseInfo>();
 			var classResponces = new List<ResponseInfo>();
 			foreach (CustomAttribute attribute in methodResponseAttributes)
 				methodResponces.Add(new ResponseInfo(attribute));
-			foreach (CustomAttribute attribute in methodResponseAttributes)
+			foreach (CustomAttribute attribute in classResponseAttributes)
 				classResponces.Add(new ResponseInfo(attribute));
 			var addedCodes = new HashSet<int>();
 			methodResponces.ForEach(response =>

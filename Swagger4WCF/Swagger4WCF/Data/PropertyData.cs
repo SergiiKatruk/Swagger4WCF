@@ -20,7 +20,9 @@ namespace Swagger4WCF.Data
 			this.IsNullable = property.PropertyType.FullName.StartsWith("System.Nullable");
 			this.Name = property.Name;
 			this.Description = documentation[this.Property];
-			if(!this.IsNullable)
+			if (this.IsNullable)
+				this.TypeData = new TypeData((property.PropertyType as GenericInstanceType).GenericArguments[0].Resolve(), documentation, false);
+			else
 				this.TypeData = new TypeData(property.PropertyType.Resolve(), documentation);
 			this.DefaultValue = this.GetPropertyDefaultValue(this.Property);
 			this.MaxLength = this.GetPropertyMaxLength(this.Property);
@@ -30,12 +32,14 @@ namespace Swagger4WCF.Data
 		private string GetPropertyDefaultValue(PropertyDefinition propertyDefinition)
 		{
 			var val = propertyDefinition.GetCustomAttribute<DefaultValueAttribute>()?.ConstructorArguments[0].Value;
+			val = (val is CustomAttributeArgument attr) ? attr.Value : val;
 			if (val is null)
 				return null;
 			if (this.TypeData.IsEnum)
 			{
-				var enumValues = this.TypeData.GetEnumValuesDescription();
-				return val.ToString();
+				return this.TypeData.EnumPerValue.ContainsKey(val) ? this.TypeData.EnumPerValue[val].ToString() :
+					this.TypeData.EnumPerCaption.ContainsKey(val.ToString()) ? this.TypeData.EnumPerCaption[val.ToString()].ToString(): 
+					val.ToString();
 			}
 			if (val is string)
 				return val as string;

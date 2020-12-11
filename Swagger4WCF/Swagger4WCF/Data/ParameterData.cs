@@ -23,9 +23,10 @@ namespace Swagger4WCF.Data
 		{
 			this.Parameter = parameter;
 			this.methodPath = path;
+			this.IsNullable = parameter.ParameterType.FullName.StartsWith("System.Nullable");
 			this.Type = parameter.ParameterType is GenericInstanceType genericInstanceType ? genericInstanceType.GenericArguments[0] : parameter.ParameterType;
 			this.TypeDefinition = parameter.ParameterType.Resolve();
-			this.TypeData = new TypeData(this.TypeDefinition, documentation);
+			this.TypeData = new TypeData(this.Type.Resolve(), documentation);
 			this.Name = parameter.Name;
 			var i = this.methodPath.IndexOf("?");
 			var ind = this.methodPath.IndexOf("{" + this.Parameter.Name + "}");
@@ -41,7 +42,6 @@ namespace Swagger4WCF.Data
 							|| this.TypeDefinition == this.Type.Module.ImportReference(typeof(long)).Resolve()
 							|| this.TypeDefinition == this.Type.Module.ImportReference(typeof(DateTime)).Resolve()
 							|| this.Type.IsArray;
-			this.IsNullable = parameter.ParameterType.FullName.Contains(nameof(System.Nullable));
 			this.IsRequired = this.IsInPath || (parameter.ParameterType.IsValueType && !this.IsNullable);
 			this.IsStream = this.Type.Resolve() == this.Type.Module.ImportReference(typeof(Stream)).Resolve();
 		}

@@ -291,8 +291,7 @@ namespace Swagger4WCF
 							if (!string.IsNullOrWhiteSpace(parameter.Description))
 							{
 								string xmlDoc = parameter.Description;
-								List<string> enumValues = parameter.TypeData.GetEnumValuesDescription();
-								xmlDoc += $" {string.Join(", ", enumValues.ToArray())}.";
+								xmlDoc += $" {string.Join(", ", parameter.TypeData.EnumValues.ToArray())}.";
 
 								this.Add("description: ", xmlDoc);
 							}
@@ -343,19 +342,13 @@ namespace Swagger4WCF
 
 				private void Add(PropertyData property, Documentation documentation)
 				{
-					if (property.IsNullable)
-						return;
-
 					this.Add(property.Name, ":");
 					using (new Block(this))
 					{
 						this.Add(property.Property.PropertyType, documentation);
 						string description = property.Description;
 						if (property.TypeData.IsEnum)
-						{
-							List<string> enumValues = property.TypeData.GetEnumValuesDescription();
-							description += $" {string.Join(", ", enumValues.ToArray())}.";
-						}
+							description += $" {string.Join(", ", property.TypeData.EnumValues.ToArray())}.";
 						this.Add("description: ", description);
 						this.AddPropertyDefaultValue(property);
 						this.AddPropertyMaxLength(property);
@@ -370,8 +363,8 @@ namespace Swagger4WCF
 
 				private void AddPropertyDefaultValue(PropertyData property)
 				{
-					//if (!string.IsNullOrWhiteSpace(property.DefaultValue))
-					//	this.Add("default: ", $"{property.DefaultValue}");
+					if (!string.IsNullOrWhiteSpace(property.DefaultValue))
+						this.Add("default: ", $"{property.DefaultValue}");
 				}
 
 				private void Add(TypeReference type, Documentation documentation)
@@ -459,8 +452,6 @@ namespace Swagger4WCF
 
 				private void ParseComplexType(TypeData type, Documentation documentation)
 				{
-					if (type.Name == "Nullable`1")
-						return;
 					this.Add(type.Name, ":");
 					using (new Block(this))
 					{
