@@ -45,7 +45,7 @@ namespace Swagger4WCF.YAML.Writers
 					if (bodyParameters.Any())
 					{
 						content.Add("requestBody:");
-						content.AddRequestBody(bodyParameters.First(), responseFormat);
+						ParameterWriter.Instance.WriteBodyParameter(bodyParameters.First(), responseFormat, content);
 					}
 
 					content.Add("tags:");

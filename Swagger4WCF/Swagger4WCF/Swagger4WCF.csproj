@@ -67,7 +67,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constants\YAMLConverterType.cs" />
+    <Compile Include="Constants\YAMLContentWriterType.cs" />
     <Compile Include="Data\MethodData.cs" />
     <Compile Include="Data\ParameterData.cs" />
     <Compile Include="Data\PropertyData.cs" />
@@ -77,6 +77,7 @@
     <Compile Include="Interfaces\IYAMLContent.cs" />
     <Compile Include="Interfaces\IYAMLContentWriter.cs" />
     <Compile Include="Interfaces\IYAMLObject.cs" />
+    <Compile Include="YAML\Readers\TypesReader.cs" />
     <Compile Include="YAML\Writers\MethodWriter.cs" />
     <Compile Include="YAML\Writers\ParameterWriter.cs" />
     <Compile Include="YAML\Writers\PropertyWriter.cs" />

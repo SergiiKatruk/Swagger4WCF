@@ -3,6 +3,7 @@ using Swagger4WCF.Interfaces;
 using Swagger4WCF.YAML;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.ServiceModel;
 
@@ -28,7 +29,8 @@ namespace Swagger4WCF.Data
 							this.Type == this.Type.Module.ImportReference(typeof(string)).Resolve() ||
 							this.Type == this.Type.Module.ImportReference(typeof(int)).Resolve() ||
 							this.Type == this.Type.Module.ImportReference(typeof(long)).Resolve() ||
-							this.Type == this.Type.Module.ImportReference(typeof(DateTime)).Resolve();
+							this.Type == this.Type.Module.ImportReference(typeof(DateTime)).Resolve() ||
+							this.Type.Name != nameof(Stream);
 
 			this.Description = documentation[this.Type];
 			this.IsEnum = type.IsEnum;

@@ -1,6 +1,6 @@
 ﻿namespace Swagger4WCF.Constants
 {
-	public enum YAMLConverterType
+	public enum YAMLContentWriterType
 	{
 		Type = 0,
 		Method = 1,
