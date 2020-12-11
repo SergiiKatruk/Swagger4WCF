@@ -16,7 +16,7 @@ namespace Swagger4WCF.YAML.Writers
 			content.Add("- name: ", parameter.Name);
 			using (new Block(content))
 			{
-				if (parameter.IsNullable)
+				if (parameter.TypeData.IsNullable)
 				{
 					content.Add("in: query");
 					if (!string.IsNullOrWhiteSpace(parameter.Description))
@@ -31,7 +31,7 @@ namespace Swagger4WCF.YAML.Writers
 					using (new Block(content))
 						content.Add(parameter.Type);
 				}
-				else if (parameter.IsValueType)
+				else if (parameter.TypeData.IsValueType)
 				{
 					if (parameter.IsInPath)
 						content.Add("in: path");
@@ -53,7 +53,7 @@ namespace Swagger4WCF.YAML.Writers
 						content.Add("description: ", parameter.Description);
 					}
 					content.Add("required: ", parameter.IsRequired.ToString());
-					if (parameter.IsStream)
+					if (parameter.TypeData.IsStream)
 					{
 						content.Add("in: formData");
 						content.Add("type: file");

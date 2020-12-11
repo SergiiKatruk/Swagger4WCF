@@ -43,7 +43,7 @@ namespace Swagger4WCF.Data
 		{
 			string responseFormat = "application/json:";
 
-			if (this.Parameters.Count == 1 && this.Parameters[0].IsStream)
+			if (this.Parameters.Count == 1 && this.Parameters[0].TypeData.IsStream)
 				responseFormat = "multipart/form-data:";
 			else if (this.WebInvoke.ResponseFormat == WebMessageFormat.Xml)
 				responseFormat = "application/xml:";

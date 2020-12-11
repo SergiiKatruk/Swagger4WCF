@@ -21,16 +21,21 @@ namespace Swagger4WCF.Data
 		public TypeData(TypeDefinition type, Documentation documentation, bool readProperties = true)
 		{
 			this.Type = type.IsArray ? type.GetElementType().Resolve() : type;
+			this.IsNullable = this.Type.FullName.StartsWith("System.Nullable");
+			this.IsStream = this.Type.Resolve() == this.Type.Module.ImportReference(typeof(Stream)).Resolve();
 			this.Name = this.Type.Name;
 			this.Methods = new List<MethodData>();
 			this.Properties = new List<PropertyData>();
 			this.IsValueType = this.Type == this.Type.Module.ImportReference(typeof(void)).Resolve() ||
+							this.Type.IsValueType ||
 							this.Type == this.Type.Module.ImportReference(typeof(bool)).Resolve() ||
 							this.Type == this.Type.Module.ImportReference(typeof(string)).Resolve() ||
 							this.Type == this.Type.Module.ImportReference(typeof(int)).Resolve() ||
+							this.Type == this.Type.Module.ImportReference(typeof(short)).Resolve() ||
+							this.Type == this.Type.Module.ImportReference(typeof(byte)).Resolve() ||
 							this.Type == this.Type.Module.ImportReference(typeof(long)).Resolve() ||
 							this.Type == this.Type.Module.ImportReference(typeof(DateTime)).Resolve() ||
-							this.Type.Name != nameof(Stream);
+							this.Type.Name == nameof(Stream);
 
 			this.Description = documentation[this.Type];
 			this.IsEnum = type.IsEnum;
@@ -74,5 +79,9 @@ namespace Swagger4WCF.Data
 
 		public bool IsValueType { get; }
 		public bool IsEnum { get; }
+
+		public bool IsNullable { get; }
+		public bool IsStream { get; }
+		public override string ToString() => this.Name;
 	}
 }

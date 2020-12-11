@@ -18,7 +18,7 @@ namespace Swagger4WCF.YAML.Readers
 
             Dictionary<string, TypeData> parameterTypes = methods.
                 SelectMany(method => method.Parameters.
-                    Where(param => !param.IsValueType).
+                    Where(param => !param.TypeData.IsValueType).
                         Select(parameter => parameter.TypeData)).
                 GroupBy(typeData => typeData.Type.FullName).
                 ToDictionary(key => key.Key, value => value.First());
