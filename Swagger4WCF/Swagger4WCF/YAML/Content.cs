@@ -112,27 +112,6 @@ namespace Swagger4WCF.YAML
 			return typeData.Methods;
 		}
 
-		public void AddRequestBody(ParameterData parameter, string responseFormat)
-		{
-			using (new Block(this))
-			{
-				if (!string.IsNullOrWhiteSpace(parameter.Description))
-					this.Add("description: ", parameter.Description);
-				this.Add("required: ", parameter.IsRequired.ToString());
-				this.Add("content:");
-				using (new Block(this))
-				{
-					this.Add(responseFormat);
-					using (new Block(this))
-					{
-						this.Add("schema:");
-						using (new Block(this))
-							this.Add(parameter.Type);
-					}
-				}
-			}
-		}
-
 		public void Add(TypeReference type)
 		{
 			if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve())
@@ -211,6 +190,9 @@ namespace Swagger4WCF.YAML
 				}
 			}
 		}
+
+		public void AddRequestBody(ParameterData parameter, string responseFormat) =>
+			ParameterWriter.Instance.WriteBodyParameter(parameter, responseFormat, this);
 
 		public void Add(params string[] line) =>
 			this.m_Builder.AppendLine(this.Tabulation.ToString() + string.Concat(line));

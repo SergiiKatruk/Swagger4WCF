@@ -70,5 +70,26 @@ namespace Swagger4WCF.YAML.Writers
 				}
 			}
 		}
+
+		public void WriteBodyParameter(ParameterData parameter, string responseFormat, IYAMLContent content)
+		{
+			using (new Block(content))
+			{
+				if (!string.IsNullOrWhiteSpace(parameter.Description))
+					content.Add("description: ", parameter.Description);
+				content.Add("required: ", parameter.IsRequired.ToString());
+				content.Add("content:");
+				using (new Block(content))
+				{
+					content.Add(responseFormat);
+					using (new Block(content))
+					{
+						content.Add("schema:");
+						using (new Block(content))
+							content.Add(parameter.Type);
+					}
+				}
+			}
+		}
 	}
 }
