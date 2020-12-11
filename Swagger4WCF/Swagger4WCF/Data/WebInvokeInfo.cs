@@ -3,7 +3,7 @@ using System.ServiceModel.Web;
 
 namespace Swagger4WCF.Data
 {
-	class WebInvokeInfo
+	public class WebInvokeInfo
 	{
 		public string UriTemplate { get; private set; }
 		public string UriTemplateFull { get; private set; }

@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Swagger4WCF.Interfaces;
 using Swagger4WCF.YAML;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.ServiceModel;
 
 namespace Swagger4WCF.Data
 {
-	class TypeData
+	public class TypeData : IYAMLObject
 	{
 		public TypeDefinition Type { get; }
 		public List<MethodData> Methods { get; }

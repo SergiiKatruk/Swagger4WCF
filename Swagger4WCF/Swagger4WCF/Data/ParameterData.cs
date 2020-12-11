@@ -1,11 +1,12 @@
 ﻿using Mono.Cecil;
+using Swagger4WCF.Interfaces;
 using Swagger4WCF.YAML;
 using System;
 using System.IO;
 
 namespace Swagger4WCF.Data
 {
-	class ParameterData
+	public class ParameterData : IYAMLObject
 	{
 		public ParameterDefinition Parameter { get;  }
 		public TypeReference Type { get; }

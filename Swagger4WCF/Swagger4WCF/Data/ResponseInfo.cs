@@ -2,7 +2,7 @@
 
 namespace Swagger4WCF.Data
 {
-	class ResponseInfo
+    public class ResponseInfo
 	{
         public int Code { get; }
         public string ContentType { get; }

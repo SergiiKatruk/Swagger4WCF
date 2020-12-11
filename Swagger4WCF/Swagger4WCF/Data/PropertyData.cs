@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Swagger4WCF.Interfaces;
 using Swagger4WCF.YAML;
 using System;
 using System.ComponentModel;
@@ -8,7 +9,7 @@ using System.Runtime.Serialization;
 
 namespace Swagger4WCF.Data
 {
-	class PropertyData
+	public class PropertyData : IYAMLObject
 	{
 		public PropertyDefinition Property { get; }
 
