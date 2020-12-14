@@ -118,6 +118,11 @@ namespace Swagger4WCF.YAML
                 this.Add("type: \"number\"");
                 this.Add("format: int16");
             }
+            else if (type.Resolve() == type.Module.ImportReference(typeof(byte)).Resolve())
+            {
+                this.Add("type: \"number\"");
+                this.Add("format: int8");
+            }
             else if (type.Resolve() == type.Module.ImportReference(typeof(long)).Resolve())
             {
                 this.Add("type: \"number\"");
