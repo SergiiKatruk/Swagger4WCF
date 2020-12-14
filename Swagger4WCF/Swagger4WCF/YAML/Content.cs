@@ -98,6 +98,7 @@ namespace Swagger4WCF.YAML
 
         public void Add(TypeReference type)
         {
+            type = (type is GenericInstanceType genType) ? genType.GenericArguments[0] : type;
             if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve())
             {
                 this.Add("type: \"string\"");
