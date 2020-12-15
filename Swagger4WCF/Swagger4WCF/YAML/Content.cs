@@ -103,8 +103,7 @@ namespace Swagger4WCF.YAML
             {
                 this.Add("type: \"string\"");
             }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve()
-                     || type.Resolve() == type.Module.ImportReference(typeof(bool?)).Resolve())
+            else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve())
             {
                 this.Add("type: \"boolean\"");
             }
@@ -128,14 +127,12 @@ namespace Swagger4WCF.YAML
                 this.Add("type: \"number\"");
                 this.Add("format: int32");
             }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(decimal)).Resolve()
-                     || type.Resolve() == type.Module.ImportReference(typeof(decimal?)).Resolve())
+            else if (type.Resolve() == type.Module.ImportReference(typeof(decimal)).Resolve())
             {
                 this.Add("type: \"number\"");
                 this.Add("format: decimal(9,2)");
             }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(DateTime)).Resolve()
-                     || type.Resolve() == type.Module.ImportReference(typeof(DateTime?)).Resolve())
+            else if (type.Resolve() == type.Module.ImportReference(typeof(DateTime)).Resolve())
             {
                 this.Add("type: \"string\"");
                 this.Add("format: date-time");

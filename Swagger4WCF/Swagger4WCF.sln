@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swagger4WCF.Demo", "Swagger
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationTests", "IntegrationTests", "{79722653-7542-4F45-8A60-C82EB520CC3B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swagger4WCF.Core", "Swagger4WCF.Core\Swagger4WCF.Core.csproj", "{1F0A6156-51B5-4D2B-AA50-D8BF4A75A2C9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +25,10 @@ Global
 		{BFA8D668-25C2-4C79-9B68-DB751E063A07}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BFA8D668-25C2-4C79-9B68-DB751E063A07}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFA8D668-25C2-4C79-9B68-DB751E063A07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F0A6156-51B5-4D2B-AA50-D8BF4A75A2C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F0A6156-51B5-4D2B-AA50-D8BF4A75A2C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F0A6156-51B5-4D2B-AA50-D8BF4A75A2C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F0A6156-51B5-4D2B-AA50-D8BF4A75A2C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

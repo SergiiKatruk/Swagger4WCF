@@ -112,7 +112,12 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Swagger4WCF.Core\Swagger4WCF.Core.csproj">
+      <Project>{1f0a6156-51b5-4d2b-aa50-d8bf4a75a2c9}</Project>
+      <Name>Swagger4WCF.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -1,17 +1,11 @@
 ﻿using Mono.Cecil;
 using System.ServiceModel.Web;
+using Swagger4WCF.Core.Information;
 
 namespace Swagger4WCF.Data
 {
-	public class WebInvokeInfo
+	public class WebInvokeInfo : WebInvokeInformation
 	{
-		public string UriTemplate { get; private set; }
-		public string UriTemplateFull { get; private set; }
-		public string Method { get; private set; }
-		public WebMessageBodyStyle BodyStyle { get; private set; }
-		public WebMessageFormat ResponseFormat { get; private set; }
-		public WebMessageFormat RequestFormat { get; private set; }
-
 		public WebInvokeInfo(MethodDefinition methodDefinition)
 		{
 			var webInvokeAttribute = methodDefinition.GetCustomAttribute<WebInvokeAttribute>();
