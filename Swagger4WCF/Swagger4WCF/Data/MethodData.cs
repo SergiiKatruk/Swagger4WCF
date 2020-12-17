@@ -26,7 +26,7 @@ namespace Swagger4WCF.Data
 				this.Parameters.Add(new ParameterData(methodDefinition, param, documentation, this.WebInvoke.UriTemplateFull));
 			this.Summary = documentation[methodDefinition].Summary;
 			this.Tag = methodDefinition.DeclaringType.GetCustomAttribute<ServiceContractAttribute>()?.Value<string>("Name") ?? methodDefinition.DeclaringType.Name;
-			this.ReturnType = new TypeData(methodDefinition.ReturnType.Resolve(), documentation);
+			this.ReturnType = new TypeData(methodDefinition.ReturnType, documentation);
 			this.InitializeResponseContent();
 		}
 

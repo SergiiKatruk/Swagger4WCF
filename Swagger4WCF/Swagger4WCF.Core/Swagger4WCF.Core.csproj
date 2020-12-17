@@ -42,6 +42,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Constants\YAMLFormats.cs" />
+    <Compile Include="Constants\YAMLTypes.cs" />
     <Compile Include="DocumentedItems\MethodItem.cs" />
     <Compile Include="DocumentedItems\ParameterItem.cs" />
     <Compile Include="DocumentedItems\PropertyItem.cs" />

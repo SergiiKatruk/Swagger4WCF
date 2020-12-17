@@ -13,9 +13,9 @@ namespace Swagger4WCF.Data
 	{
 		public TypeDefinition TypeDefinition { get; }
 		
-		public TypeData(TypeDefinition type, Documentation documentation, bool readProperties = true)
+		public TypeData(TypeReference type, Documentation documentation, bool readProperties = true)
 		{
-			this.TypeDefinition = type.IsArray ? type.GetElementType().Resolve() : type;
+			this.TypeDefinition = type.IsArray ? type.GetElementType().Resolve() : type.Resolve();
 			this.IsNullable = this.TypeDefinition.FullName.StartsWith("System.Nullable");
 			this.IsStream = this.TypeDefinition.Resolve() == this.TypeDefinition.Module.ImportReference(typeof(Stream)).Resolve();
 			this.Name = this.TypeDefinition.Name;
@@ -32,10 +32,10 @@ namespace Swagger4WCF.Data
 							this.TypeDefinition.Name == nameof(Stream);
 
 			this.Description = documentation[this.TypeDefinition];
-			this.IsEnum = type.IsEnum;
+			this.IsEnum = this.TypeDefinition.IsEnum;
 			if (!this.IsValueType)
 			{
-				foreach (var methodDefinition in type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic &&
+				foreach (var methodDefinition in this.TypeDefinition.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic &&
 					(_Method.GetCustomAttribute<OperationContractAttribute>() != null ||
 					_Method.CustomAttributes.Any(attr => attr.AttributeType.Name.Contains("JsonOperationContract")))))
 				{

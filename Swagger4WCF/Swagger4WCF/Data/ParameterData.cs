@@ -15,7 +15,7 @@ namespace Swagger4WCF.Data
 			this.Parameter = parameter;
 			this.TypeReference = parameter.ParameterType is GenericInstanceType genericInstanceType ? genericInstanceType.GenericArguments[0] : parameter.ParameterType;
 			this.TypeDefinition = parameter.ParameterType.Resolve();
-			this.Type = new TypeData(this.TypeReference.Resolve(), documentation);
+			this.Type = new TypeData(this.TypeReference, documentation);
 			this.Name = parameter.Name;
 			var i = path.IndexOf("?");
 			var ind = path.IndexOf("{" + this.Parameter.Name + "}");

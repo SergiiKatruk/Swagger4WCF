@@ -21,9 +21,9 @@ namespace Swagger4WCF.Data
 			this.Name = property.Name;
 			this.Description = documentation[this.PropertyDefinition];
 			if (this.IsNullable)
-				this.Type = new TypeData((property.PropertyType as GenericInstanceType).GenericArguments[0].Resolve(), documentation, false);
+				this.Type = new TypeData((property.PropertyType as GenericInstanceType).GenericArguments[0], documentation, false);
 			else
-				this.Type = new TypeData(property.PropertyType.Resolve(), documentation);
+				this.Type = new TypeData(property.PropertyType, documentation);
 			this.DefaultValue = this.GetPropertyDefaultValue(this.PropertyDefinition);
 			this.MaxLength = this.GetPropertyMaxLength(this.PropertyDefinition);
 			this.IsRequired = this.GetIsRequired(this.PropertyDefinition);
