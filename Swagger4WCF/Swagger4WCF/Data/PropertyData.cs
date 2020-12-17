@@ -1,12 +1,11 @@
 ﻿using Mono.Cecil;
-using Swagger4WCF.Interfaces;
+using Swagger4WCF.Core.DocumentedItems;
 using Swagger4WCF.YAML;
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Runtime.Serialization;
-using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.Data
 {

@@ -1,37 +1,37 @@
 ﻿using Mono.Cecil;
-using Swagger4WCF.Interfaces;
+using Swagger4WCF.Core.DocumentedItems;
 using Swagger4WCF.YAML;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.ServiceModel;
-using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.Data
 {
 	public class TypeData : TypeItem
 	{
-		public TypeDefinition Type { get; }
+		public TypeDefinition TypeDefinition { get; }
 		
 		public TypeData(TypeDefinition type, Documentation documentation, bool readProperties = true)
 		{
-			this.Type = type.IsArray ? type.GetElementType().Resolve() : type;
-			this.IsNullable = this.Type.FullName.StartsWith("System.Nullable");
-			this.IsStream = this.Type.Resolve() == this.Type.Module.ImportReference(typeof(Stream)).Resolve();
-			this.Name = this.Type.Name;
-			this.IsValueType = this.Type == this.Type.Module.ImportReference(typeof(void)).Resolve() ||
-							this.Type.IsValueType ||
-							this.Type == this.Type.Module.ImportReference(typeof(bool)).Resolve() ||
-							this.Type == this.Type.Module.ImportReference(typeof(string)).Resolve() ||
-							this.Type == this.Type.Module.ImportReference(typeof(int)).Resolve() ||
-							this.Type == this.Type.Module.ImportReference(typeof(short)).Resolve() ||
-							this.Type == this.Type.Module.ImportReference(typeof(byte)).Resolve() ||
-							this.Type == this.Type.Module.ImportReference(typeof(long)).Resolve() ||
-							this.Type == this.Type.Module.ImportReference(typeof(DateTime)).Resolve() ||
-							this.Type.Name == nameof(Stream);
+			this.TypeDefinition = type.IsArray ? type.GetElementType().Resolve() : type;
+			this.IsNullable = this.TypeDefinition.FullName.StartsWith("System.Nullable");
+			this.IsStream = this.TypeDefinition.Resolve() == this.TypeDefinition.Module.ImportReference(typeof(Stream)).Resolve();
+			this.Name = this.TypeDefinition.Name;
+			this.FullName = this.TypeDefinition.FullName;
+			this.IsValueType = this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(void)).Resolve() ||
+							this.TypeDefinition.IsValueType ||
+							this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(bool)).Resolve() ||
+							this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(string)).Resolve() ||
+							this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(int)).Resolve() ||
+							this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(short)).Resolve() ||
+							this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(byte)).Resolve() ||
+							this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(long)).Resolve() ||
+							this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(DateTime)).Resolve() ||
+							this.TypeDefinition.Name == nameof(Stream);
 
-			this.Description = documentation[this.Type];
+			this.Description = documentation[this.TypeDefinition];
 			this.IsEnum = type.IsEnum;
 			if (!this.IsValueType)
 			{
@@ -42,7 +42,7 @@ namespace Swagger4WCF.Data
 					this.Methods.Add(new MethodData(methodDefinition, documentation));
 				}
 				if (readProperties)
-					foreach (var prop in this.Type.Properties)
+					foreach (var prop in this.TypeDefinition.Properties)
 						this.Properties.Add(new PropertyData(prop, documentation));
 			}
 			this.EnumPerCaption = new Dictionary<string, object>();
@@ -54,7 +54,7 @@ namespace Swagger4WCF.Data
 
 		private void InitializeEnumValues(Documentation documentation)
 		{
-			foreach (var field in this.Type.Fields)
+			foreach (var field in this.TypeDefinition.Fields)
 			{
 				if (field.Name == "value__")
 					continue;

@@ -10,6 +10,7 @@ namespace Swagger4WCF.Core.DocumentedItems
 		public List<PropertyItem> Properties { get; protected set; } = new List<PropertyItem>();
 		
 		public string Name { get; protected set; }
+		public string FullName { get; protected set; }
 		public string Description { get; protected set; }
 
 		public bool IsValueType { get; protected set; }

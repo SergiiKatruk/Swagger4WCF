@@ -1,9 +1,7 @@
-﻿using Swagger4WCF.Constants;
-using Swagger4WCF.Data;
+﻿using Swagger4WCF.Core.DocumentedItems;
 using Swagger4WCF.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
-using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.YAML.Writers
 {

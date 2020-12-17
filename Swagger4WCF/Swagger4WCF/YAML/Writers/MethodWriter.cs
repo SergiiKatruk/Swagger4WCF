@@ -1,9 +1,8 @@
-﻿using Swagger4WCF.Constants;
+﻿using Swagger4WCF.Core.DocumentedItems;
 using Swagger4WCF.Data;
 using Swagger4WCF.Interfaces;
 using System;
 using System.Linq;
-using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.YAML.Writers
 {
@@ -70,7 +69,7 @@ namespace Swagger4WCF.YAML.Writers
 								{
 									content.Add("description: OK");
 								}
-								if (method.MethodDefinition.ReturnType.Resolve() != method.MethodDefinition.Module.ImportReference(typeof(void)).Resolve())
+								if (((MethodData)method).MethodDefinition.ReturnType.Resolve() != ((MethodData)method).MethodDefinition.Module.ImportReference(typeof(void)).Resolve())
 								{
 									content.Add("content:");
 									using (new Block(content))
@@ -81,7 +80,7 @@ namespace Swagger4WCF.YAML.Writers
 											content.Add("schema:");
 											using (new Block(content))
 											{
-												content.Add(method.MethodDefinition.ReturnType);
+												content.Add(((MethodData)method).MethodDefinition.ReturnType);
 											}
 										}
 									}
@@ -97,7 +96,7 @@ namespace Swagger4WCF.YAML.Writers
 								{
 									content.Add($"description: {response.Description}");
 
-									if (method.MethodDefinition.ReturnType.Resolve() != method.MethodDefinition.Module.ImportReference(typeof(void)).Resolve())
+									if (((MethodData)method).MethodDefinition.ReturnType.Resolve() != ((MethodData)method).MethodDefinition.Module.ImportReference(typeof(void)).Resolve())
 									{
 										content.Add("content:");
 										using (new Block(content))
@@ -110,7 +109,7 @@ namespace Swagger4WCF.YAML.Writers
 												{
 													if (response.Code == 200)
 													{
-														content.Add(method.MethodDefinition.ReturnType);
+														content.Add(((MethodData)method).MethodDefinition.ReturnType);
 													}
 													else
 													{

@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using Swagger4WCF.Core.DocumentedItems;
 using Swagger4WCF.Data;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Swagger4WCF.YAML.Readers
 {
-    public sealed class TypesReader
+	public sealed class TypesReader
     {
         private static TypesReader instance;
         
@@ -12,36 +13,36 @@ namespace Swagger4WCF.YAML.Readers
         
         public static TypesReader Instance => instance ?? (instance = new TypesReader());
 
-        public List<TypeData> GetUsedTypes(List<MethodData> methods)
+        public List<TypeItem> GetUsedTypes(List<MethodItem> methods)
         {
             Dictionary<string, TypeData> typeDatas = new Dictionary<string, TypeData>();
 
-            Dictionary<string, TypeData> parameterTypes = methods.
+            Dictionary<string, TypeItem> parameterTypes = methods.
                 SelectMany(method => method.Parameters.
-                    Where(param => !param.TypeData.IsValueType).
-                        Select(parameter => parameter.TypeData)).
-                GroupBy(typeData => typeData.Type.FullName).
+                    Where(param => !param.Type.IsValueType).
+                        Select(parameter => parameter.Type)).
+                GroupBy(typeData => typeData.FullName).
                 ToDictionary(key => key.Key, value => value.First());
             
-            Dictionary<string, TypeData> returnTypes = methods.
+            Dictionary<string, TypeItem> returnTypes = methods.
                 Select(method => method.ReturnType).
                 Where(type => !type.IsValueType).
-                GroupBy(t => t.Type.FullName).
+                GroupBy(t => t.FullName).
                 ToDictionary(key => key.Key, value => value.First());
 
-            Dictionary<string, TypeData> methodTypes = parameterTypes.
+            Dictionary<string, TypeItem> methodTypes = parameterTypes.
                 Concat(returnTypes.
                     Where(type => !parameterTypes.ContainsKey(type.Key))).
                 ToDictionary(key => key.Key, value => value.Value);
 
-            Dictionary<string, TypeData> propertyTypes = new Dictionary<string, TypeData>();
-            Dictionary<string, TypeData> currentTypes = methodTypes;
+            Dictionary<string, TypeItem> propertyTypes = new Dictionary<string, TypeItem>();
+            Dictionary<string, TypeItem> currentTypes = methodTypes;
             do
             {
                 propertyTypes = currentTypes.
-                    SelectMany(type => type.Value.Properties.Where(property => !property.TypeData.IsValueType)).
-                    GroupBy(property => property.TypeData.Type.FullName).
-                    ToDictionary(key => key.Key, value => value.First().TypeData);
+                    SelectMany(type => type.Value.Properties.Where(property => !property.Type.IsValueType)).
+                    GroupBy(property => property.Type.FullName).
+                    ToDictionary(key => key.Key, value => value.First().Type);
 
                 methodTypes = methodTypes.
                     Concat(propertyTypes.

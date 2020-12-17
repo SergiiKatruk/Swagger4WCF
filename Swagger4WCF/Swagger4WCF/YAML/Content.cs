@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
+using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.YAML
 {
@@ -52,17 +53,17 @@ namespace Swagger4WCF.YAML
             }
             this.Add("paths:");
 
-            var _allMethods = new List<MethodData>();
+            var _allMethods = new List<MethodItem>();
             {
                 var allTypes = new List<TypeDefinition> { type };
                 allTypes.AddRange(type.Interfaces.Select(interf => assembly.MainModule.GetType(interf.InterfaceType.FullName)));
                 allTypes.ForEach(currentTypes => _allMethods.AddRange(AddMethodsForType(currentTypes)));
             }
-            List<TypeData> definitions = TypesReader.Instance.GetUsedTypes(_allMethods);
+            List<TypeItem> definitions = TypesReader.Instance.GetUsedTypes(_allMethods);
             this.WriteDefinitions(definitions);
         }
 
-        private void WriteDefinitions(List<TypeData> definitions)
+        private void WriteDefinitions(List<TypeItem> definitions)
         {
             if (!definitions.Any())
                 return;
@@ -76,7 +77,7 @@ namespace Swagger4WCF.YAML
             }
         }
 
-        private List<MethodData> AddMethodsForType(TypeDefinition type)
+        private List<MethodItem> AddMethodsForType(TypeDefinition type)
         {
             var typeData = new TypeData(type, this.Documentation);
             var methodsGroupedByPath = typeData.Methods.GroupBy(m => m.WebInvoke.UriTemplate, key => key).ToDictionary(k => k.Key, v => v);
@@ -89,7 +90,7 @@ namespace Swagger4WCF.YAML
 
                     this.Add("/", _method, ":");
                     foreach (var m in methodsGroupedByPath[_method])
-                        this.Add(m);
+                        MethodWriter.Instance.Write(m, this);
                 }
             }
 
@@ -168,8 +169,5 @@ namespace Swagger4WCF.YAML
 
         public void Add(params string[] line) =>
             this.m_Builder.AppendLine(this.Tabulation.ToString() + string.Concat(line));
-
-        private void Add(MethodData method) =>
-            MethodWriter.Instance.Write(method, this);
     }
 }
