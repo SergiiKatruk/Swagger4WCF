@@ -71,12 +71,11 @@
     <Compile Include="Data\MethodData.cs" />
     <Compile Include="Data\ParameterData.cs" />
     <Compile Include="Data\PropertyData.cs" />
-    <Compile Include="Data\ResponseInfo.cs" />
     <Compile Include="Data\TypeData.cs" />
-    <Compile Include="Data\WebInvokeInfo.cs" />
+    <Compile Include="Initializers\ResponseDetailsInitializer.cs" />
+    <Compile Include="Initializers\WebInvokeInitializer.cs" />
     <Compile Include="Interfaces\IYAMLContent.cs" />
     <Compile Include="Interfaces\IYAMLContentWriter.cs" />
-    <Compile Include="Interfaces\IYAMLObject.cs" />
     <Compile Include="YAML\Readers\TypesReader.cs" />
     <Compile Include="YAML\Writers\MethodWriter.cs" />
     <Compile Include="YAML\Writers\ParameterWriter.cs" />

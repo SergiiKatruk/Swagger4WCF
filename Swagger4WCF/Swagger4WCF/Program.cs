@@ -70,7 +70,7 @@ namespace Swagger4WCF
             }).Where(_Entry => _Entry != null).ToArray();
             foreach (var _entry in _domain)
             {
-                foreach (var _document in Generator.Generate(_entry.Assembly, Documentation.Load(_entry.Location, _entry.Assembly), interfaceToGenerateName))
+                foreach (var _document in Generator.Generate(_entry.Assembly, Documentation.Load(_entry.Location, _entry.Assembly.Name.Name), interfaceToGenerateName))
                 {
                     var _location = $@"{ _directory }\{ _entry.Assembly.Name.Name }.{_document.Type.Name }.yaml";
                     using (var _writer = new StreamWriter(_location, false, Encoding.UTF8))

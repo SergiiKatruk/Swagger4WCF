@@ -6,26 +6,28 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Runtime.Serialization;
+using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.Data
 {
-	public class PropertyData : IYAMLObject
+	public class PropertyData : PropertyItem
 	{
-		public PropertyDefinition Property { get; }
+		public PropertyDefinition PropertyDefinition { get; }
+		public TypeDefinition TypeDefinition { get; }
 
 		public PropertyData(PropertyDefinition property, Documentation documentation)
 		{
-			this.Property = property;
+			this.PropertyDefinition = property;
 			this.IsNullable = property.PropertyType.FullName.StartsWith("System.Nullable");
 			this.Name = property.Name;
-			this.Description = documentation[this.Property];
+			this.Description = documentation[this.PropertyDefinition];
 			if (this.IsNullable)
-				this.TypeData = new TypeData((property.PropertyType as GenericInstanceType).GenericArguments[0].Resolve(), documentation, false);
+				this.Type = new TypeData((property.PropertyType as GenericInstanceType).GenericArguments[0].Resolve(), documentation, false);
 			else
-				this.TypeData = new TypeData(property.PropertyType.Resolve(), documentation);
-			this.DefaultValue = this.GetPropertyDefaultValue(this.Property);
-			this.MaxLength = this.GetPropertyMaxLength(this.Property);
-			this.IsRequired = this.GetIsRequired(this.Property);
+				this.Type = new TypeData(property.PropertyType.Resolve(), documentation);
+			this.DefaultValue = this.GetPropertyDefaultValue(this.PropertyDefinition);
+			this.MaxLength = this.GetPropertyMaxLength(this.PropertyDefinition);
+			this.IsRequired = this.GetIsRequired(this.PropertyDefinition);
 		}
 
 		private string GetPropertyDefaultValue(PropertyDefinition propertyDefinition)
@@ -34,10 +36,10 @@ namespace Swagger4WCF.Data
 			val = (val is CustomAttributeArgument attr) ? attr.Value : val;
 			if (val is null)
 				return null;
-			if (this.TypeData.IsEnum)
+			if (this.Type.IsEnum)
 			{
-				return this.TypeData.EnumPerValue.ContainsKey(val) ? this.TypeData.EnumPerValue[val].ToString() :
-					this.TypeData.EnumPerCaption.ContainsKey(val.ToString()) ? this.TypeData.EnumPerCaption[val.ToString()].ToString(): 
+				return this.Type.EnumPerValue.ContainsKey(val) ? this.Type.EnumPerValue[val].ToString() :
+					this.Type.EnumPerCaption.ContainsKey(val.ToString()) ? this.Type.EnumPerCaption[val.ToString()].ToString(): 
 					val.ToString();
 			}
 			if (val is string)
@@ -65,13 +67,5 @@ namespace Swagger4WCF.Data
 		private bool GetIsRequired(PropertyDefinition propertyDefinition) =>
 			propertyDefinition.GetCustomAttribute<DataMemberAttribute>()?.Value<bool>(nameof(DataMemberAttribute.IsRequired)) == true ||
 			propertyDefinition.GetCustomAttribute<RequiredAttribute>() != null;
-
-		public bool IsNullable { get; }
-		public string Description { get; }
-		public string Name { get; }
-		public TypeData TypeData { get;}
-		public string DefaultValue { get; }
-		public string MaxLength { get; }
-		public bool IsRequired { get; }
 	}
 }

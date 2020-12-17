@@ -3,10 +3,11 @@ using Swagger4WCF.Data;
 using Swagger4WCF.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
+using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.YAML.Writers
 {
-	public class TypeWriter : IYAMLContentWriter<TypeData>
+	public class TypeWriter : IYAMLContentWriter<TypeItem>
 	{
 		private static TypeWriter instance;
 
@@ -14,7 +15,7 @@ namespace Swagger4WCF.YAML.Writers
 
 		public static TypeWriter Instance => instance ?? (instance = new TypeWriter());
 
-		public void Write(TypeData type, IYAMLContent content)
+		public void Write(TypeItem type, IYAMLContent content)
 		{
 			content.Add(type.Name, ":");
 			using (new Block(content))
@@ -25,7 +26,7 @@ namespace Swagger4WCF.YAML.Writers
 					content.Add(string.Concat("description: ", type.Description));
 				}
 
-				if (type.Type.Properties.Count > 0)
+				if (type.Properties.Count > 0)
 				{
 					var requiredProperties = new List<string>();
 					content.Add("properties:");

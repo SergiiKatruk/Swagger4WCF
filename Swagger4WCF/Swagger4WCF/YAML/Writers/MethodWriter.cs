@@ -3,10 +3,11 @@ using Swagger4WCF.Data;
 using Swagger4WCF.Interfaces;
 using System;
 using System.Linq;
+using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.YAML.Writers
 {
-	public class MethodWriter : IYAMLContentWriter<MethodData>
+	public class MethodWriter : IYAMLContentWriter<MethodItem>
 	{
 		private static MethodWriter instance;
 
@@ -14,7 +15,7 @@ namespace Swagger4WCF.YAML.Writers
 
 		public static MethodWriter Instance => instance ?? (instance = new MethodWriter());
 
-		public void Write(MethodData method, IYAMLContent content)
+		public void Write(MethodItem method, IYAMLContent content)
 		{
 			if (method.WebInvoke == null || string.IsNullOrWhiteSpace(method.WebInvoke.Method))
 				return;
@@ -34,7 +35,7 @@ namespace Swagger4WCF.YAML.Writers
 					var parameters = method.Parameters.Where(param => !param.InRequestBody);
 					var bodyParameters = method.Parameters.Where(param => param.InRequestBody);
 					if (bodyParameters.Count() > 1)
-						throw new Exception($"It isn't allowed to have multiply body parameters! Method: '{method.MethodDefinition.FullName}'.");
+						throw new Exception($"It isn't allowed to have multiply body parameters! Method: '{method.Name}'.");
 					if (parameters.Any())
 					{
 						content.Add("parameters:");

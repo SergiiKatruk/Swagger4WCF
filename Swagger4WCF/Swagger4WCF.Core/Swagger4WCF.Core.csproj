@@ -42,13 +42,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DocumentedItems\MethodItem.cs" />
+    <Compile Include="DocumentedItems\ParameterItem.cs" />
+    <Compile Include="DocumentedItems\PropertyItem.cs" />
+    <Compile Include="DocumentedItems\TypeItem.cs" />
     <Compile Include="Information\ResponseDetails.cs" />
-    <Compile Include="Information\WebInvokeInformation.cs" />
+    <Compile Include="Information\WebInvokeDetails.cs" />
+    <Compile Include="Interfaces\IDocumentedItem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="DocumentedItems\" />
-    <Folder Include="Interfaces\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

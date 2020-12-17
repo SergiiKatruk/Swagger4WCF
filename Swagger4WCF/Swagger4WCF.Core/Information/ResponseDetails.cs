@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Swagger4WCF.Core.Information
+﻿namespace Swagger4WCF.Core.Information
 {
-	public abstract class ResponseDetails
+	public class ResponseDetails
 	{
+		public int Code { get; protected set; }
+		public string ContentType { get; protected set; }
+		public string Description { get; protected set; }
+		public ResponseDetails(int code, string contentType, string description) =>
+			(this.Code, this.ContentType, this.Description) = (code, contentType, description);
 	}
 }

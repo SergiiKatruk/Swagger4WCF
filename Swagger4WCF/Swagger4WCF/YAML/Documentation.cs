@@ -18,9 +18,9 @@ namespace Swagger4WCF.YAML
             return _summary.Trim();
         }
 
-        static public Documentation Load(string location, AssemblyDefinition assembly)
+        static public Documentation Load(string location, string assemblyName)
         {
-            var _location = string.Concat(new Uri(Path.GetDirectoryName(location)).LocalPath, @"\", assembly.Name.Name, ".xml");
+            var _location = string.Concat(new Uri(Path.GetDirectoryName(location)).LocalPath, @"\", assemblyName, ".xml");
             if (File.Exists(_location)) { return new Documentation(_location); }
             return new Documentation();
         }

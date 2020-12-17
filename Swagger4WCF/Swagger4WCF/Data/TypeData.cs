@@ -6,26 +6,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.ServiceModel;
+using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.Data
 {
-	public class TypeData : IYAMLObject
+	public class TypeData : TypeItem
 	{
 		public TypeDefinition Type { get; }
-		public List<MethodData> Methods { get; }
-		public string Name { get; }
-		public string Description { get; }
-		public List<PropertyData> Properties { get; }
-		private Documentation documentation;
-
+		
 		public TypeData(TypeDefinition type, Documentation documentation, bool readProperties = true)
 		{
 			this.Type = type.IsArray ? type.GetElementType().Resolve() : type;
 			this.IsNullable = this.Type.FullName.StartsWith("System.Nullable");
 			this.IsStream = this.Type.Resolve() == this.Type.Module.ImportReference(typeof(Stream)).Resolve();
 			this.Name = this.Type.Name;
-			this.Methods = new List<MethodData>();
-			this.Properties = new List<PropertyData>();
 			this.IsValueType = this.Type == this.Type.Module.ImportReference(typeof(void)).Resolve() ||
 							this.Type.IsValueType ||
 							this.Type == this.Type.Module.ImportReference(typeof(bool)).Resolve() ||
@@ -39,7 +33,6 @@ namespace Swagger4WCF.Data
 
 			this.Description = documentation[this.Type];
 			this.IsEnum = type.IsEnum;
-			this.documentation = documentation;
 			if (!this.IsValueType)
 			{
 				foreach (var methodDefinition in type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic &&
@@ -56,19 +49,16 @@ namespace Swagger4WCF.Data
 			this.EnumPerValue = new Dictionary<object, object>();
 			this.EnumValues = new List<string>();
 			if (this.IsEnum)
-				this.InitializeEnumValues();
+				this.InitializeEnumValues(documentation);
 		}
-		public List<string> EnumValues { get; }
-		public Dictionary<object, object> EnumPerValue {get;}
-		public Dictionary<string, object> EnumPerCaption { get; }
 
-		private void InitializeEnumValues()
+		private void InitializeEnumValues(Documentation documentation)
 		{
 			foreach (var field in this.Type.Fields)
 			{
 				if (field.Name == "value__")
 					continue;
-				var xmlDoc = this.documentation[field] ?? string.Empty;
+				var xmlDoc = documentation[field] ?? string.Empty;
 				if (!string.IsNullOrWhiteSpace(xmlDoc))
 					xmlDoc = $"({xmlDoc})";
 				this.EnumValues.Add($"{field.Constant} - {field.Name}{xmlDoc}");
@@ -76,12 +66,5 @@ namespace Swagger4WCF.Data
 				this.EnumPerCaption[field.Name] = field.Constant;
 			}
 		}
-
-		public bool IsValueType { get; }
-		public bool IsEnum { get; }
-
-		public bool IsNullable { get; }
-		public bool IsStream { get; }
-		public override string ToString() => this.Name;
 	}
 }

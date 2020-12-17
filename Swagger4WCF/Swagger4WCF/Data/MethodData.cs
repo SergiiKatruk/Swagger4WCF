@@ -6,31 +6,22 @@ using System.ComponentModel;
 using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Web;
+using Swagger4WCF.Core.DocumentedItems;
+using Swagger4WCF.Core.Information;
+using Swagger4WCF.Initializers;
 
 namespace Swagger4WCF.Data
 {
-	public class MethodData : IYAMLObject
+	public class MethodData : MethodItem
 	{
-		public string Description { get; private set; }
-		public string Name { get; private set; }
-		public WebInvokeInfo WebInvoke { get; private set; }
-		public List<ResponseInfo> ResponseInfos { get; private set; }
-		public string ResponceContent { get; private set; }
-
 		public MethodDefinition MethodDefinition { get; }
-		public TypeData ReturnType { get; }
-
-		public string Summary { get;  }
-		public List<ParameterData> Parameters { get; }
-		public string Tag { get; }
-
+		
 		public MethodData(MethodDefinition methodDefinition, Documentation documentation)
 		{
 			this.MethodDefinition = methodDefinition;
-			this.WebInvoke = new WebInvokeInfo(methodDefinition);
+			this.WebInvoke = WebInvokeInitializer.InitializersWebInvokeDetails(methodDefinition);
 			this.InitializeDescriptionInfo(methodDefinition);
 			this.InitializeResponceInfo(methodDefinition);
-			this.Parameters = new List<ParameterData>();
 			foreach(var param in methodDefinition.Parameters)
 				this.Parameters.Add(new ParameterData(methodDefinition, param, documentation, this.WebInvoke.UriTemplateFull));
 			this.Summary = documentation[methodDefinition].Summary;
@@ -43,7 +34,7 @@ namespace Swagger4WCF.Data
 		{
 			string responseFormat = "application/json:";
 
-			if (this.Parameters.Count == 1 && this.Parameters[0].TypeData.IsStream)
+			if (this.Parameters.Count == 1 && this.Parameters[0].Type.IsStream)
 				responseFormat = "multipart/form-data:";
 			else if (this.WebInvoke.ResponseFormat == WebMessageFormat.Xml)
 				responseFormat = "application/xml:";
@@ -55,14 +46,13 @@ namespace Swagger4WCF.Data
 		{
 			var methodResponseAttributes = methodDefinition.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute");
 			var classResponseAttributes = methodDefinition.DeclaringType.CustomAttributes.Where(attr => attr.AttributeType.Name == "ResponseAttribute");
-			this.ResponseInfos = new List<ResponseInfo>();
 
-			var methodResponces = new List<ResponseInfo>();
-			var classResponces = new List<ResponseInfo>();
+			var methodResponces = new List<ResponseDetails>();
+			var classResponces = new List<ResponseDetails>();
 			foreach (CustomAttribute attribute in methodResponseAttributes)
-				methodResponces.Add(new ResponseInfo(attribute));
+				methodResponces.Add(ResponseDetailsInitializer.InitializersResponse(attribute));
 			foreach (CustomAttribute attribute in classResponseAttributes)
-				classResponces.Add(new ResponseInfo(attribute));
+				classResponces.Add(ResponseDetailsInitializer.InitializersResponse(attribute));
 			var addedCodes = new HashSet<int>();
 			methodResponces.ForEach(response =>
 			{

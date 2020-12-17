@@ -1,9 +1,9 @@
-﻿using Swagger4WCF.Data;
+﻿using Swagger4WCF.Core.DocumentedItems;
 using Swagger4WCF.Interfaces;
 
 namespace Swagger4WCF.YAML.Writers
 {
-	public class ParameterWriter : IYAMLContentWriter<ParameterData>
+	public class ParameterWriter : IYAMLContentWriter<ParameterItem>
 	{
 		private static ParameterWriter instance;
 
@@ -11,18 +11,18 @@ namespace Swagger4WCF.YAML.Writers
 
 		public static ParameterWriter Instance => instance ?? (instance = new ParameterWriter());
 
-		public void Write(ParameterData parameter, IYAMLContent content)
+		public void Write(ParameterItem parameter, IYAMLContent content)
 		{
 			content.Add("- name: ", parameter.Name);
 			using (new Block(content))
 			{
-				if (parameter.TypeData.IsNullable)
+				if (parameter.Type.IsNullable)
 				{
 					content.Add("in: query");
 					if (!string.IsNullOrWhiteSpace(parameter.Description))
 					{
 						string xmlDoc = parameter.Description;
-						xmlDoc += $" {string.Join(", ", parameter.TypeData.EnumValues.ToArray())}.";
+						xmlDoc += $" {string.Join(", ", parameter.Type.EnumValues.ToArray())}.";
 
 						content.Add("description: ", xmlDoc);
 					}
@@ -31,7 +31,7 @@ namespace Swagger4WCF.YAML.Writers
 					using (new Block(content))
 						content.Add(parameter.Type);
 				}
-				else if (parameter.TypeData.IsValueType)
+				else if (parameter.Type.IsValueType)
 				{
 					if (parameter.IsInPath)
 						content.Add("in: path");
@@ -53,7 +53,7 @@ namespace Swagger4WCF.YAML.Writers
 						content.Add("description: ", parameter.Description);
 					}
 					content.Add("required: ", parameter.IsRequired.ToString());
-					if (parameter.TypeData.IsStream)
+					if (parameter.Type.IsStream)
 					{
 						content.Add("in: formData");
 						content.Add("type: file");
@@ -71,7 +71,7 @@ namespace Swagger4WCF.YAML.Writers
 			}
 		}
 
-		public void WriteBodyParameter(ParameterData parameter, string responseFormat, IYAMLContent content)
+		public void WriteBodyParameter(ParameterItem parameter, string responseFormat, IYAMLContent content)
 		{
 			using (new Block(content))
 			{
