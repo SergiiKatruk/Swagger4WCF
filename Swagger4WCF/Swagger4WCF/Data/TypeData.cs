@@ -34,7 +34,7 @@ namespace Swagger4WCF.Data
 							this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(DateTime)).Resolve() ||
 							this.TypeDefinition.Name == nameof(Stream);
 
-			this.Description = documentation[this.TypeDefinition];
+			this.Description = documentation[this];
 			this.IsEnum = this.TypeDefinition.IsEnum;
 			if (!this.IsValueType)
 			{

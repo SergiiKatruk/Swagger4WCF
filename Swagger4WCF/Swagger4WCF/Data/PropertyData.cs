@@ -17,9 +17,10 @@ namespace Swagger4WCF.Data
 		public PropertyData(PropertyDefinition property, Documentation documentation)
 		{
 			this.PropertyDefinition = property;
+			this.DeclaringType = new TypeData(property.DeclaringType, documentation);
 			this.IsNullable = property.PropertyType.FullName.StartsWith("System.Nullable");
 			this.Name = property.Name;
-			this.Description = documentation[this.PropertyDefinition];
+			this.Description = documentation[this];
 			if (this.IsNullable)
 				this.Type = new TypeData((property.PropertyType as GenericInstanceType).GenericArguments[0], documentation, false);
 			else

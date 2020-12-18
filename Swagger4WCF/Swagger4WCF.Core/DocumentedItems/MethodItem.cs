@@ -8,6 +8,7 @@ namespace Swagger4WCF.Core.DocumentedItems
 	{
 		public List<ParameterItem> Parameters { get; protected set; } = new List<ParameterItem>();
 		public TypeItem ReturnType { get; protected set; }
+		public TypeItem DeclaringType { get; protected set; }
 
 		public string Description { get; protected set; }
 		public string Name { get; protected set; }

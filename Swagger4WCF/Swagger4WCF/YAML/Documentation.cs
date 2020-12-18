@@ -1,9 +1,9 @@
-﻿using Mono.Cecil;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using Swagger4WCF.Core.DocumentedItems;
 
 namespace Swagger4WCF.YAML
 {
@@ -62,12 +62,12 @@ namespace Swagger4WCF.YAML
             public string Response;
         }
 
-        public string this[TypeDefinition type]
+        public string this[TypeItem type]
         {
             get { return this[string.Concat("T:", type.FullName).Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
         }
 
-        public Method this[MethodDefinition method]
+        public Method this[MethodItem method]
         {
             get
             {
@@ -79,27 +79,27 @@ namespace Swagger4WCF.YAML
             }
         }
 
-        public string GetMethodParametersInfo(MethodDefinition method)
+        public string GetMethodParametersInfo(MethodItem method)
 		{
             if (!method.Parameters.Any())
                 return string.Empty;
 
-            return string.Concat("(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ")");
+            return string.Concat("(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.Type.FullName)), ")");
         }
 
-        public string this[PropertyDefinition property]
+        public string this[PropertyItem property]
         {
             get { return this[string.Concat("P:", property.DeclaringType.FullName, ".", property.Name).Replace('<', '{').Replace('>', '}').Replace("`1", "").Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
         }
 
-        public string this[FieldDefinition field]
+        public string this[Mono.Cecil.FieldDefinition field]
         {
             get { return this[string.Concat("F:", field.DeclaringType.FullName, ".", field.Name).Replace('<', '{').Replace('>', '}').Replace("`1", "").Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
         }
 
-        public string this[MethodDefinition method, ParameterDefinition parameter]
+        public string this[MethodItem method, ParameterItem parameter]
         {
-            get { return this[string.Concat("A:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.ParameterType.FullName)), ").", parameter.Name).Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
+            get { return this[string.Concat("A:", method.DeclaringType.FullName, ".", method.Name, "(", string.Join(",", method.Parameters.Select(_Parameter => _Parameter.Type.FullName)), ").", parameter.Name).Replace('<', '{').Replace('>', '}').Replace("`1", "")]; }
         }
 
         public string this[string identity]

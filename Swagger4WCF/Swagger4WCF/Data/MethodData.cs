@@ -17,13 +17,14 @@ namespace Swagger4WCF.Data
 		
 		public MethodData(MethodDefinition methodDefinition, Documentation documentation)
 		{
+			this.DeclaringType = new TypeData(methodDefinition.DeclaringType, documentation);
 			this.MethodDefinition = methodDefinition;
 			this.WebInvoke = WebInvokeInitializer.InitializersWebInvokeDetails(methodDefinition);
 			this.InitializeDescriptionInfo(methodDefinition);
 			this.InitializeResponceInfo(methodDefinition);
 			foreach(var param in methodDefinition.Parameters)
-				this.Parameters.Add(new ParameterData(methodDefinition, param, documentation, this.WebInvoke.UriTemplateFull));
-			this.Summary = documentation[methodDefinition].Summary;
+				this.Parameters.Add(new ParameterData(this, methodDefinition, param, documentation, this.WebInvoke.UriTemplateFull));
+			this.Summary = documentation[this].Summary;
 			this.Tag = methodDefinition.DeclaringType.GetCustomAttribute<ServiceContractAttribute>()?.Value<string>("Name") ?? methodDefinition.DeclaringType.Name;
 			this.ReturnType = new TypeData(methodDefinition.ReturnType, documentation);
 			this.IsVoid = methodDefinition.ReturnType.Resolve() == MethodDefinition.Module.ImportReference(typeof(void)).Resolve();

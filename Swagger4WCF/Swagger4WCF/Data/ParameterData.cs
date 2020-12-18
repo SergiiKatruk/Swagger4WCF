@@ -10,7 +10,7 @@ namespace Swagger4WCF.Data
 		public TypeReference TypeReference { get; }
 		public TypeDefinition TypeDefinition { get; }
 		
-		public ParameterData(MethodDefinition method, ParameterDefinition parameter, Documentation documentation, string path)
+		public ParameterData(MethodItem methodItem, MethodDefinition method, ParameterDefinition parameter, Documentation documentation, string path)
 		{
 			this.Parameter = parameter;
 			this.TypeReference = parameter.ParameterType is GenericInstanceType genericInstanceType ? genericInstanceType.GenericArguments[0] : parameter.ParameterType;
@@ -20,7 +20,7 @@ namespace Swagger4WCF.Data
 			var i = path.IndexOf("?");
 			var ind = path.IndexOf("{" + this.Parameter.Name + "}");
 			this.InRequestBody = ind < 0;
-			this.Description = documentation[method, parameter];
+			this.Description = documentation[methodItem, this];
 			this.IsInPath = ind > 0 && (ind < i || i < 0);
 			this.IsRequired = this.IsInPath || (parameter.ParameterType.IsValueType && !this.Type.IsNullable);
 		}
