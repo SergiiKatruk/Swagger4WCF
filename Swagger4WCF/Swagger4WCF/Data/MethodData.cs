@@ -1,14 +1,13 @@
 ﻿using Mono.Cecil;
-using Swagger4WCF.Interfaces;
+using Swagger4WCF.Core.DocumentedItems;
+using Swagger4WCF.Core.Information;
+using Swagger4WCF.Initializers;
 using Swagger4WCF.YAML;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Web;
-using Swagger4WCF.Core.DocumentedItems;
-using Swagger4WCF.Core.Information;
-using Swagger4WCF.Initializers;
 
 namespace Swagger4WCF.Data
 {
@@ -27,6 +26,7 @@ namespace Swagger4WCF.Data
 			this.Summary = documentation[methodDefinition].Summary;
 			this.Tag = methodDefinition.DeclaringType.GetCustomAttribute<ServiceContractAttribute>()?.Value<string>("Name") ?? methodDefinition.DeclaringType.Name;
 			this.ReturnType = new TypeData(methodDefinition.ReturnType, documentation);
+			this.IsVoid = methodDefinition.ReturnType.Resolve() == MethodDefinition.Module.ImportReference(typeof(void)).Resolve();
 			this.InitializeResponseContent();
 		}
 

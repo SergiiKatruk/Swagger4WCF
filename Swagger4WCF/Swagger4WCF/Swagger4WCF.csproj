@@ -67,29 +67,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constants\YAMLContentWriterType.cs" />
     <Compile Include="Data\MethodData.cs" />
     <Compile Include="Data\ParameterData.cs" />
     <Compile Include="Data\PropertyData.cs" />
     <Compile Include="Data\TypeData.cs" />
     <Compile Include="Initializers\ResponseDetailsInitializer.cs" />
     <Compile Include="Initializers\WebInvokeInitializer.cs" />
-    <Compile Include="Interfaces\IYAMLContent.cs" />
-    <Compile Include="Interfaces\IYAMLContentWriter.cs" />
-    <Compile Include="YAML\Readers\TypesReader.cs" />
-    <Compile Include="YAML\Writers\MethodWriter.cs" />
-    <Compile Include="YAML\Writers\ParameterWriter.cs" />
-    <Compile Include="YAML\Writers\PropertyWriter.cs" />
     <Compile Include="YAML\Documentation.cs" />
     <Compile Include="Extension.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="YAML\Generator.cs" />
-    <Compile Include="YAML\Block.cs" />
     <Compile Include="YAML\Content.cs" />
     <Compile Include="YAML\Document.cs" />
-    <Compile Include="YAML\Tabulation.cs" />
-    <Compile Include="YAML\Writers\TypeWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -117,6 +107,7 @@
       <Name>Swagger4WCF.Core</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

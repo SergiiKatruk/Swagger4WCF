@@ -1,7 +1,7 @@
-﻿using Swagger4WCF.Interfaces;
+﻿using Swagger4WCF.Core.Interfaces;
 using System;
 
-namespace Swagger4WCF.YAML
+namespace Swagger4WCF.Core.YAML
 {
 	public class Block : IDisposable
 	{

@@ -1,9 +1,8 @@
 ﻿using Swagger4WCF.Core.DocumentedItems;
-using Swagger4WCF.Data;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Swagger4WCF.YAML.Readers
+namespace Swagger4WCF.Core.Readers
 {
 	public sealed class TypesReader
     {
@@ -15,7 +14,7 @@ namespace Swagger4WCF.YAML.Readers
 
         public List<TypeItem> GetUsedTypes(List<MethodItem> methods)
         {
-            Dictionary<string, TypeData> typeDatas = new Dictionary<string, TypeData>();
+            Dictionary<string, TypeItem> typeDatas = new Dictionary<string, TypeItem>();
 
             Dictionary<string, TypeItem> parameterTypes = methods.
                 SelectMany(method => method.Parameters.

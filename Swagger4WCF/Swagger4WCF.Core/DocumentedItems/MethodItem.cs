@@ -13,6 +13,7 @@ namespace Swagger4WCF.Core.DocumentedItems
 		public string Name { get; protected set; }
 		public string Summary { get; protected set; }
 		public string Tag { get; protected set; }
+		public bool IsVoid { get; protected set; }
 
 		public WebInvokeDetails WebInvoke { get; protected set; }
 		public List<ResponseDetails> ResponseInfos { get; protected set; } = new List<ResponseDetails>();

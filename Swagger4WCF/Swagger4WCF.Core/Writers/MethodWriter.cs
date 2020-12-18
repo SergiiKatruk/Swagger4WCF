@@ -1,10 +1,10 @@
 ﻿using Swagger4WCF.Core.DocumentedItems;
-using Swagger4WCF.Data;
-using Swagger4WCF.Interfaces;
+using Swagger4WCF.Core.Interfaces;
+using Swagger4WCF.Core.YAML;
 using System;
 using System.Linq;
 
-namespace Swagger4WCF.YAML.Writers
+namespace Swagger4WCF.Core.Writers
 {
 	public class MethodWriter : IYAMLContentWriter<MethodItem>
 	{
@@ -39,7 +39,7 @@ namespace Swagger4WCF.YAML.Writers
 					{
 						content.Add("parameters:");
 						using (new Block(content))
-							foreach (ParameterData _parameter in parameters)
+							foreach (ParameterItem _parameter in parameters)
 								ParameterWriter.Instance.Write(_parameter, content);
 					}
 					if (bodyParameters.Any())
@@ -69,7 +69,7 @@ namespace Swagger4WCF.YAML.Writers
 								{
 									content.Add("description: OK");
 								}
-								if (((MethodData)method).MethodDefinition.ReturnType.Resolve() != ((MethodData)method).MethodDefinition.Module.ImportReference(typeof(void)).Resolve())
+								if (!method.IsVoid)
 								{
 									content.Add("content:");
 									using (new Block(content))
@@ -96,7 +96,7 @@ namespace Swagger4WCF.YAML.Writers
 								{
 									content.Add($"description: {response.Description}");
 
-									if (((MethodData)method).MethodDefinition.ReturnType.Resolve() != ((MethodData)method).MethodDefinition.Module.ImportReference(typeof(void)).Resolve())
+									if (!method.IsVoid)
 									{
 										content.Add("content:");
 										using (new Block(content))

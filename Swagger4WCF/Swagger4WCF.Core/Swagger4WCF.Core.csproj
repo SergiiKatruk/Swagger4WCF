@@ -51,7 +51,16 @@
     <Compile Include="Information\ResponseDetails.cs" />
     <Compile Include="Information\WebInvokeDetails.cs" />
     <Compile Include="Interfaces\IDocumentedItem.cs" />
+    <Compile Include="Interfaces\IYAMLContent.cs" />
+    <Compile Include="Interfaces\IYAMLContentWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Readers\TypesReader.cs" />
+    <Compile Include="Writers\MethodWriter.cs" />
+    <Compile Include="Writers\ParameterWriter.cs" />
+    <Compile Include="Writers\PropertyWriter.cs" />
+    <Compile Include="Writers\TypeWriter.cs" />
+    <Compile Include="YAML\Block.cs" />
+    <Compile Include="YAML\Tabulation.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

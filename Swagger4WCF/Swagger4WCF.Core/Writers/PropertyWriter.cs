@@ -1,8 +1,8 @@
 ﻿using Swagger4WCF.Core.DocumentedItems;
-using Swagger4WCF.Data;
-using Swagger4WCF.Interfaces;
+using Swagger4WCF.Core.Interfaces;
+using Swagger4WCF.Core.YAML;
 
-namespace Swagger4WCF.YAML.Writers
+namespace Swagger4WCF.Core.Writers
 {
 	public class PropertyWriter : IYAMLContentWriter<PropertyItem>
 	{

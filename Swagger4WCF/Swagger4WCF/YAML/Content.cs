@@ -1,9 +1,9 @@
 ﻿using Mono.Cecil;
-using Swagger4WCF.Constants;
 using Swagger4WCF.Data;
-using Swagger4WCF.Interfaces;
-using Swagger4WCF.YAML.Readers;
-using Swagger4WCF.YAML.Writers;
+using Swagger4WCF.Core.Interfaces;
+using Swagger4WCF.Core.Readers;
+using Swagger4WCF.Core.Writers;
+using Swagger4WCF.Core.YAML;
 using System;
 using System.Collections.Generic;
 using System.IO;

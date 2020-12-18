@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Swagger4WCF.YAML
+namespace Swagger4WCF.Core.YAML
 {
 	public class Tabulation
 	{
