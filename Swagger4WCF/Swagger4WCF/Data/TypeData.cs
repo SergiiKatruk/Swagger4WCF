@@ -20,6 +20,9 @@ namespace Swagger4WCF.Data
 			this.IsStream = this.TypeDefinition.Resolve() == this.TypeDefinition.Module.ImportReference(typeof(Stream)).Resolve();
 			this.Name = this.TypeDefinition.Name;
 			this.FullName = this.TypeDefinition.FullName;
+			this.IsArray = type.IsArray;
+			if (this.IsArray)
+				this.ElementType = new TypeData(this.TypeDefinition, documentation);
 			this.IsValueType = this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(void)).Resolve() ||
 							this.TypeDefinition.IsValueType ||
 							this.TypeDefinition == this.TypeDefinition.Module.ImportReference(typeof(bool)).Resolve() ||

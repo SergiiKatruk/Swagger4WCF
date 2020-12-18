@@ -30,7 +30,7 @@ namespace Swagger4WCF.YAML.Writers
 					content.Add("required: ", parameter.IsRequired.ToString());
 					content.Add("schema:");
 					using (new Block(content))
-						content.Add(((ParameterData)parameter).TypeDefinition);
+						content.Add(parameter.Type);
 				}
 				else if (parameter.Type.IsValueType)
 				{
@@ -45,7 +45,7 @@ namespace Swagger4WCF.YAML.Writers
 					content.Add("required: ", parameter.IsRequired ? "true" : "false");
 					content.Add("schema:");
 					using (new Block(content))
-						content.Add(((ParameterData)parameter).TypeDefinition);
+						content.Add(parameter.Type);
 				}
 				else
 				{
@@ -65,7 +65,7 @@ namespace Swagger4WCF.YAML.Writers
 						content.Add("schema:");
 						using (new Block(content))
 						{
-							content.Add(((ParameterData)parameter).TypeDefinition);
+							content.Add(parameter.Type);
 						}
 					}
 				}
@@ -87,7 +87,7 @@ namespace Swagger4WCF.YAML.Writers
 					{
 						content.Add("schema:");
 						using (new Block(content))
-							content.Add(((ParameterData)parameter).TypeDefinition);
+							content.Add(parameter.Type);
 					}
 				}
 			}

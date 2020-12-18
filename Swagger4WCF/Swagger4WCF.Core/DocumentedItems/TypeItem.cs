@@ -11,6 +11,7 @@ namespace Swagger4WCF.Core.DocumentedItems
 
 		public List<MethodItem> Methods { get; protected set; } = new List<MethodItem>();
 		public List<PropertyItem> Properties { get; protected set; } = new List<PropertyItem>();
+		public TypeItem ElementType { get; protected set; }
 
 		public string Name 
 		{ 
@@ -32,6 +33,7 @@ namespace Swagger4WCF.Core.DocumentedItems
 		public bool IsValueType { get; protected set; }
 		public bool IsNullable { get; protected set; }
 		public bool IsStream { get; protected set; }
+		public bool IsArray { get; protected set; }
 		public bool IsEnum { get; protected set; }
 
 		public List<string> EnumValues { get; protected set; }

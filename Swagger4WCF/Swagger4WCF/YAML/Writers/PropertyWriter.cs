@@ -17,7 +17,7 @@ namespace Swagger4WCF.YAML.Writers
 			content.Add(property.Name, ":");
 			using (new Block(content))
 			{
-				content.Add(((PropertyData)property).PropertyDefinition.PropertyType);
+				content.Add(property.Type);
 				string description = property.Description;
 				if (property.Type.IsEnum)
 					description += $" {string.Join(", ", property.Type.EnumValues.ToArray())}.";

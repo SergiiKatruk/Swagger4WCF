@@ -80,7 +80,7 @@ namespace Swagger4WCF.YAML.Writers
 											content.Add("schema:");
 											using (new Block(content))
 											{
-												content.Add(((MethodData)method).MethodDefinition.ReturnType);
+												content.Add(method.ReturnType);
 											}
 										}
 									}
@@ -109,7 +109,7 @@ namespace Swagger4WCF.YAML.Writers
 												{
 													if (response.Code == 200)
 													{
-														content.Add(((MethodData)method).MethodDefinition.ReturnType);
+														content.Add(method.ReturnType);
 													}
 													else
 													{

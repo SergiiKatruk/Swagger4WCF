@@ -97,74 +97,39 @@ namespace Swagger4WCF.YAML
             return typeData.Methods;
         }
 
-        public void Add(TypeReference type)
-        {
-            type = (type is GenericInstanceType genType) ? genType.GenericArguments[0] : type;
-            if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve())
-            {
-                this.Add("type: \"string\"");
-            }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve())
-            {
-                this.Add("type: \"boolean\"");
-            }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(int)).Resolve())
-            {
-                this.Add("type: \"number\"");
-                this.Add("format: int32");
-            }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(short)).Resolve())
-            {
-                this.Add("type: \"number\"");
-                this.Add("format: int16");
-            }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(byte)).Resolve())
-            {
-                this.Add("type: \"number\"");
-                this.Add("format: int8");
-            }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(long)).Resolve())
-            {
-                this.Add("type: \"number\"");
-                this.Add("format: int32");
-            }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(decimal)).Resolve())
-            {
-                this.Add("type: \"number\"");
-                this.Add("format: decimal(9,2)");
-            }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(DateTime)).Resolve())
-            {
-                this.Add("type: \"string\"");
-                this.Add("format: date-time");
-            }
-            else if (type.Resolve() == type.Module.ImportReference(typeof(Stream)).Resolve())
-            {
-                this.Add("type: \"string\"");
-                this.Add("format: binary");
-            }
-            else if (type.IsArray)
+        public void Add(TypeItem type)
+		{
+            if (type.IsArray)
             {
                 this.Add("type: array");
                 this.Add("items:");
-                using (new Block(this)) { this.Add(type.GetElementType()); }
+                using (new Block(this))
+                {
+                    this.Add(type.ElementType);
+                }
+                return;
             }
-            else if (type is TypeDefinition typeDef && typeDef.IsEnum)
-            {
+            
+            if(type.IsEnum)
+			{
                 this.Add("type: number");
                 this.Add("enum:");
 
-                foreach (var field in typeDef.Fields)
+                foreach (var enumValue in type.EnumPerValue)
                 {
-                    if (field.Name == "value__")
-                        continue;
-                    this.Add($"- {field.Constant}");
+                    this.Add($"- {enumValue.Key}");
                 }
+                return;
             }
-            else
-            {
-                this.Add("$ref: \"#/components/schemas/", type.Name, "\"");
-            }
+            
+            if (type.IsValueType)
+			{
+                this.Add($"type: {type.YAMLTypeName}");
+                if(!string.IsNullOrWhiteSpace(type.YamlTypeFormat))
+                    this.Add($"format: {type.YamlTypeFormat}");
+                return;
+			}
+            this.Add("$ref: \"#/components/schemas/", type.Name, "\"");
         }
 
         public void Add(params string[] line) =>
